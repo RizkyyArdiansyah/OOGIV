@@ -175,17 +175,13 @@ export default function Consultation() {
   const handleEditMessage = async (messageId, newContent) => {
     if (!newContent.trim()) return;
 
-    // PERBAIKAN: Langsung hapus semua messages setelah message yang di-edit
-    // TANPA mengupdate message lama terlebih dahulu
-    setMessages(prev => {
-      const editedMessageIndex = prev.findIndex(msg => msg.id === messageId);
-      // Potong array sampai sebelum message yang di-edit (tidak termasuk message yang di-edit)
-      return prev.slice(0, editedMessageIndex);
-    });
+    // Hapus hanya pesan yang di-edit
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
 
-    // Kirim pesan baru dengan konten yang sudah di-edit
+    // Kirim ulang pesan yang sudah diubah
     await sendMessage(newContent.trim());
   };
+
 
   const isMobile = window.innerWidth < 768;
   const isTablet = window.innerWidth < 1024;
@@ -459,7 +455,6 @@ export default function Consultation() {
                               setEditingMessageId(null);
                               setEditedContent('');
                             }}
-                            disabled={isBotCurrentlyResponding}
                             className="px-3 py-2 font-medium bg-emerald-400 hover:bg-emerald-600 text-white rounded text-sm active:scale-105"
                           >
                             Simpan
@@ -493,7 +488,7 @@ export default function Consultation() {
                               navigator.clipboard.writeText(message.content);
                               toast.success('Pesan berhasil disalin!');
                             }}
-                            className={`absolute p-1.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 ${message.type === 'user'
+                            className={`absolute p-1.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 cursor-pointer ${message.type === 'user'
                               ? 'text-gray-600 -top-5 right-8'
                               : 'text-gray-600 -bottom-8 left-0'
                               }`}
@@ -509,7 +504,7 @@ export default function Consultation() {
                                 setEditingMessageId(message.id);
                                 setEditedContent(message.content);
                               }}
-                              className="absolute p-1.5 rounded transition-opacity duration-200 text-gray-600 -top-5 right-0"
+                              className="absolute p-1.5 rounded transition-opacity duration-200 text-gray-600 -top-5 right-0 cursor-pointer"
                               title="Edit"
                             >
                               <Edit className='w-4 h-4' />
@@ -530,7 +525,7 @@ export default function Consultation() {
 
           {/* Input */}
           <div className="border-t border-gray-200 bg-white p-4">
-            <div className="border-gray-200 bg-white p-4">
+            <div className="border-gray-200 bg-white p-1 md:p-4">
               <div className="flex items-end space-x-3">
                 <div className="flex-1 max-w-full">
                   <textarea
@@ -549,7 +544,7 @@ export default function Consultation() {
                 </div>
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isProcessing }
+                  disabled={!inputValue.trim() || isProcessing}
                   className="p-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2"
                 >
                   <Send className="w-5 h-5 rotate-45 mr-1" />

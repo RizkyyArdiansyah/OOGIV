@@ -69,7 +69,7 @@ const HomePage = () => {
     };
 
     return (
-        <div className="min-h-[100vh] bg-gray-100 relative overflow-hidden">
+        <div className="min-h-screen bg-gray-100 relative overflow-hidden flex flex-col">
             {/* Floating Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {/* Animated geometric shapes */}
@@ -92,7 +92,7 @@ const HomePage = () => {
             </div>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10">
+            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10 w-full">
                 {/* Hero Section */}
                 <div className="text-center mb-12 md:mb-24 select-none">
                     <div className="animate-fade-in-up">
@@ -211,8 +211,9 @@ const HomePage = () => {
                 </div>
             </main>
 
-            <footer className="bg-gray-100 shadow-lg relative z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-1">
+            {/* Footer - Always at bottom */}
+            <footer className="bg-gray-100 shadow-lg relative z-10 mt-auto">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center justify-center">
                         <p className="text-slate-800/75 text-xs md:text-sm font-bold text-center animate-fade-in">
                             © 2025 OOGIV - Made with ♥ for all teachers
