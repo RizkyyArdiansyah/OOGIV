@@ -408,19 +408,19 @@ const GeneratePage = () => {
                             </button>
                         </div>
                         <div className="flex-1 text-center">
-                            <h1 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">Buat Soal</h1>
-                            <p className="text-xs md:text-sm mx-3 text-gray-700 font-medium">OOGIV siap untuk hasilkan soal beserta kunci jawaban yang siap unduh.</p>
+                            <h1 className="text-xl md:text-2xl font-semibold text-gray-900 -ml-4 lg:mb-2">Buat Soal</h1>
+                            <p className="hidden lg:block text-xs md:text-sm mx-3 text-gray-700 font-medium">OOGIV siap untuk hasilkan soal beserta kunci jawaban yang siap unduh.</p>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 select-none">
-                <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 select-none">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
                     {/* Form Section - 40% */}
                     <div className="lg:col-span-2">
-                        <div className="rounded-2xl bg-white shadow-lg border border-gray-200 p-6 sm:p-8">
-                            <div className="space-y-8">
+                        <div className="rounded-2xl bg-white shadow-lg border border-gray-200 lg:p-6 p-4">
+                            <div className="space-y-4 lg:space-y-8">
                                 {/* Material Type Selection */}
                                 <div>
                                     <label className="flex items-center space-x-2 text-lg font-semibold text-gray-800 mb-4">

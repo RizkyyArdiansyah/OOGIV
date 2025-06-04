@@ -366,7 +366,7 @@ export default function Consultation() {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex flex-col text-center">
-            <h1 className="text-xl font-bold text-slate-800 mb-2">QnA Materi</h1>
+            <h1 className="text-xl font-bold text-slate-800 lg:mb-2">QnA Materi</h1>
             <p className="text-sm text-gray-900 hidden sm:block">
               Bingung dengan materi? <span className="font-medium">Tanya OOGIV</span> mengenai materi yang Anda miliki.
             </p></div>
@@ -533,7 +533,7 @@ export default function Consultation() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Tanya..."
-                    className="w-full max-w-full overflow-hidden px-4 py-3 border rounded-2xl border-blue-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full max-w-full overflow-hidden px-4 py-3 border rounded-2xl border-soft-blue resize-none focus:outline-none focus:ring-2 focus:ring-soft-blue focus:border-transparent"
                     rows="1"
                     style={{ minHeight: '44px', maxHeight: '120px' }}
                     onInput={(e) => {
