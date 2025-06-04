@@ -12,6 +12,7 @@ export const useConsultation = () => {
 };
 
 export const ConsultationProvider = ({ children }) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     // State untuk messages
     const [messages, setMessages] = useState(() => {
         try {
@@ -294,7 +295,7 @@ export const ConsultationProvider = ({ children }) => {
             const controller = new AbortController();
             activeRequestsRef.current.set(taskId, controller);
 
-            const response = await fetch('https://ai.oogiv.com/api/konsulai', {
+            const response = await fetch(`${API_BASE_URL}/konsulai`, {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',
@@ -449,7 +450,7 @@ export const ConsultationProvider = ({ children }) => {
             const controller = new AbortController();
             activeRequestsRef.current.set(taskId, controller);
 
-            const response = await fetch('https://ai.oogiv.com/api/konsulai', {
+            const response = await fetch(`${API_BASE_URL}/konsulai`, {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',
