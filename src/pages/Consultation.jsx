@@ -229,12 +229,6 @@ export default function Consultation() {
                     checked={materialSource === 'youtube'}
                     onChange={(e) => {
                       const selectedValue = e.target.value;
-
-                      if (selectedValue === 'youtube') {
-                        toast.info('Fitur YouTube belum tersedia!');
-                        return; // Mencegah perubahan state
-                      }
-
                       setMaterialSource(selectedValue);
                     }}
                     className="w-4 h-4 cursor-pointer"
@@ -255,7 +249,7 @@ export default function Consultation() {
                 placeholder="https://youtu.be/xxxxx"
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border text-xs border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
@@ -363,7 +357,7 @@ export default function Consultation() {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Upload className="w-5 h-5" />
           </button>
           <div className="flex flex-col text-center">
             <h1 className="text-xl font-bold text-slate-800 lg:mb-2">QnA Materi</h1>

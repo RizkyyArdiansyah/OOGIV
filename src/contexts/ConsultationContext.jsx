@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const ConsultationContext = createContext();
 
@@ -13,6 +14,9 @@ export const useConsultation = () => {
 
 export const ConsultationProvider = ({ children }) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+    const YT_URL = import.meta.env.VITE_YOUTUBE_BASE_URL;
+
     // State untuk messages
     const [messages, setMessages] = useState(() => {
         try {
@@ -33,7 +37,6 @@ export const ConsultationProvider = ({ children }) => {
         ];
     });
 
-    // State untuk materials processed
     const [materialsProcessed, setMaterialsProcessed] = useState(() => {
         try {
             const savedState = sessionStorage.getItem('materials_processed');
@@ -44,7 +47,6 @@ export const ConsultationProvider = ({ children }) => {
         }
     });
 
-    // State untuk menyimpan file yang sudah diproses (dalam memory dengan persistence)
     const [processedFiles, setProcessedFiles] = useState(() => {
         try {
             const savedFiles = sessionStorage.getItem('processed_files_data');
@@ -58,9 +60,9 @@ export const ConsultationProvider = ({ children }) => {
                         byteNumbers[i] = byteCharacters.charCodeAt(i);
                     }
                     const byteArray = new Uint8Array(byteNumbers);
-                    return new File([byteArray], fileData.name, { 
+                    return new File([byteArray], fileData.name, {
                         type: fileData.type,
-                        lastModified: fileData.lastModified 
+                        lastModified: fileData.lastModified
                     });
                 });
             }
@@ -96,40 +98,158 @@ export const ConsultationProvider = ({ children }) => {
     const [isBotResponding, setIsBotResponding] = useState(false);
     const [backgroundTasks, setBackgroundTasks] = useState(new Set());
 
+    // State untuk YouTube conversion
+    const [isConvertingYoutube, setIsConvertingYoutube] = useState(false);
+
     // Ref untuk menyimpan controller AbortController untuk cancel request jika perlu
     const activeRequestsRef = useRef(new Map());
 
-    // Function untuk convert File ke base64 untuk storage
+    // Helper function to format file size
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    // Helper function to extract YouTube video ID from URL
+    const extractYouTubeId = (url) => {
+        const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    };
+
+    // Function untuk convert YouTube to MP3
+    const convertYoutubeToMp3 = async (youtubeUrl) => {
+        try {
+            setIsConvertingYoutube(true);
+            toast.info('Memproses URL Youtube...');
+
+            // Using a YouTube to MP3 conversion service (example using rapidapi or similar service)
+            // You'll need to replace this with your preferred YouTube to MP3 API
+            const response = await axios.get(`${YT_URL}`, {
+                params: { id: extractYouTubeId(youtubeUrl) },
+                headers: {
+                    'X-RapidAPI-Key': `${API_KEY}`,
+                    'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
+                },
+                timeout: 180000,
+            });
+
+            if (response.data && response.data.link) {
+                // Download the MP3 file from the conversion service
+                const mp3Response = await axios.get(response.data.link, {
+                    responseType: 'blob',
+                    timeout: 180000
+                });
+
+                // Create a File object from the blob
+                const mp3Blob = new Blob([mp3Response.data], { type: 'audio/mpeg' });
+                const mp3File = new File([mp3Blob], `youtube_audio_${Date.now()}.mp3`, {
+                    type: 'audio/mpeg'
+                });
+                toast.success('URL Berhasil diterima!');
+                return mp3File;
+            } else {
+                throw new Error('Gagal mengirim URL');
+            }
+
+        } catch (error) {
+            console.error('Error converting YouTube to MP3:', error);
+            let errorMessage = 'Gagal memproses URL';
+
+            if (error.code === 'ECONNABORTED') {
+                errorMessage = 'Konversi timeout. Video terlalu panjang atau koneksi lambat.';
+            } else if (error.response) {
+                const { status, data } = error.response;
+                if (status === 400) {
+                    errorMessage = 'URL YouTube tidak valid.';
+                } else if (status === 404) {
+                    errorMessage = 'Video tidak ditemukan atau tidak dapat diakses.';
+                } else if (status === 413) {
+                    errorMessage = 'Video terlalu besar untuk diproses.';
+                } else if (status === 500) {
+                    errorMessage = 'Server error saat memproses. Silakan coba lagi.';
+                } else {
+                    errorMessage = data?.detail || data?.message || `Error konversi (${status})`;
+                }
+            } else if (error.request) {
+                errorMessage = 'Tidak dapat terhubung ke server.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
+            throw new Error(errorMessage);
+        } finally {
+            setIsConvertingYoutube(false);
+        }
+    };
+
+    // Function untuk convert File ke base64 untuk storage (dengan compression untuk MP3)
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
                 const base64 = reader.result.split(',')[1]; // Remove data:... prefix
+                const sizeInBytes = base64.length * 0.75; // Approximate size after base64 encoding
                 resolve({
                     name: file.name,
                     type: file.type,
                     size: file.size,
                     lastModified: file.lastModified,
-                    content: base64
+                    content: base64,
+                    base64Size: sizeInBytes
                 });
             };
             reader.onerror = error => reject(error);
         });
     };
 
-    // Function untuk save files ke sessionStorage
+    // Function untuk save files ke sessionStorage dengan size management
     const saveFilesToStorage = async (files) => {
         try {
+            // 1. Konversi file ke format Base64 (langkah ini tetap diperlukan)
             const filesData = await Promise.all(files.map(file => fileToBase64(file)));
-            sessionStorage.setItem('processed_files_data', JSON.stringify(filesData));
-            
-            // Also save metadata
-            const filesMetadata = files.map(fileToMetadata);
-            sessionStorage.setItem('processed_files_metadata', JSON.stringify(filesMetadata));
-            setProcessedFilesMetadata(filesMetadata);
+
+            // 2. Langsung coba simpan data file ke sessionStorage
+            try {
+                // Operasi utama: menyimpan data file
+                sessionStorage.setItem('processed_files_data', JSON.stringify(filesData));
+                // Jika berhasil, simpan juga metadatanya
+                const filesMetadata = files.map(fileToMetadata);
+                sessionStorage.setItem('processed_files_metadata', JSON.stringify(filesMetadata));
+                setProcessedFilesMetadata(filesMetadata);
+                // Kembalikan status bahwa file berhasil disimpan sepenuhnya
+                return { success: true };
+
+            } catch (storageError) {
+                // 3. Jika terjadi error saat menyimpan...
+                if (storageError.name === 'QuotaExceededError') {
+                    // Jika error disebabkan oleh storage penuh, lakukan fallback
+                    toast.warn('⚠️ QuotaExceededError terdeteksi. Menyimpan metadata saja sebagai fallback.');
+
+                    // Pastikan key untuk data file bersih
+                    sessionStorage.removeItem('processed_files_data');
+
+                    // Simpan HANYA metadata
+                    const filesMetadata = files.map(fileToMetadata);
+                    sessionStorage.setItem('processed_files_metadata', JSON.stringify(filesMetadata));
+                    setProcessedFilesMetadata(filesMetadata);
+
+                    // Kembalikan status bahwa file hanya ada di memori
+                    return { success: true, inMemoryOnly: true };
+                } else {
+                    // Jika error lain, lempar kembali agar bisa ditangani di luar
+                    toast.error('Terjadi error storage yang tidak terduga:', storageError);
+                    throw storageError;
+                }
+            }
         } catch (error) {
-            console.error('Error saving files to sessionStorage:', error);
+            // Blok catch ini untuk menangani error dari langkah #1 (fileToBase64)
+            toast.error('Error dalam proses saveFilesToStorage:', error);
             throw error;
         }
     };
@@ -204,15 +324,16 @@ export const ConsultationProvider = ({ children }) => {
                 };
             }
         } else if (materialSource === 'youtube') {
-            // Check apakah YouTube URL ada
-            if (!processedYoutubeUrl || processedYoutubeUrl.trim() === '') {
+            if (!processedFiles || processedFiles.length === 0) {
                 return {
                     isValid: false,
-                    reason: 'youtube_url_missing'
+                    // Kita buat reason baru yang lebih spesifik
+                    reason: 'youtube_file_missing'
                 };
             }
         }
 
+        // Jika semua pengecekan di atas lolos, materi tersedia
         return {
             isValid: true
         };
@@ -230,21 +351,35 @@ export const ConsultationProvider = ({ children }) => {
             case 'files_missing_in_memory':
             case 'files_metadata_mismatch':
                 message = 'Data materi hilang. Silakan upload dan proses file ulang.';
-                // Reset material processed state
+                // Reset state untuk upload
                 setMaterialsProcessed(false);
                 setProcessedFiles([]);
                 setProcessedFilesMetadata([]);
                 break;
-            case 'youtube_url_missing':
-                message = 'URL YouTube hilang. Silakan input dan proses URL YouTube ulang.';
-                // Reset material processed state
+
+            // === TAMBAHKAN CASE BARU DI SINI ===
+            case 'youtube_file_missing':
+                message = 'Materi YouTube tidak ditemukan. Silakan proses ulang URL materi Anda.';
+                // Reset state untuk youtube agar bersih
                 setMaterialsProcessed(false);
                 setProcessedYoutubeUrl('');
+                setProcessedFiles([]);
+                setProcessedFilesMetadata([]);
                 break;
+
+            case 'youtube_url_missing': // Case ini untuk jika URL-nya sendiri yang hilang
+                message = 'URL YouTube hilang. Silakan input dan proses URL YouTube ulang.';
+                setMaterialsProcessed(false);
+                setProcessedYoutubeUrl('');
+                setProcessedFiles([]);
+                setProcessedFilesMetadata([]);
+                break;
+
             default:
                 message = 'Terjadi masalah dengan data materi. Silakan upload ulang.';
         }
 
+        // Tampilkan notifikasi toast
         toast.info(message);
     };
 
@@ -274,11 +409,16 @@ export const ConsultationProvider = ({ children }) => {
             setIsBotResponding(true);
 
             const formData = new FormData();
+            let processedFilesToUse = [...files];
 
             if (materialSource === 'upload' && files.length > 0) {
                 // Store actual files in memory and sessionStorage
                 setProcessedFiles(files);
-                await saveFilesToStorage(files);
+                const saveResult = await saveFilesToStorage(files);
+
+                if (saveResult.inMemoryOnly) {
+                    return;
+                }
 
                 // Add files to formData
                 files.forEach((file) => {
@@ -287,8 +427,27 @@ export const ConsultationProvider = ({ children }) => {
                 formData.append('query', '');
 
             } else if (materialSource === 'youtube' && youtubeUrl.trim()) {
-                setProcessedYoutubeUrl(youtubeUrl);
-                formData.append('query', youtubeUrl);
+                // Convert YouTube URL to MP3 first
+                try {
+                    const mp3File = await convertYoutubeToMp3(youtubeUrl);
+
+                    // Store the converted MP3 file
+                    processedFilesToUse = [mp3File];
+                    setProcessedFiles([mp3File]);
+                    const saveResult = await saveFilesToStorage([mp3File]);
+
+                    if (saveResult.inMemoryOnly) {
+                        return;
+                    }
+
+                    // Add the MP3 file to formData instead of YouTube URL
+                    formData.append('files', mp3File);
+                    formData.append('query', ''); // Empty query since we're sending file
+
+                } catch (conversionError) {
+                    // If conversion fails, throw error to be handled by outer catch
+                    throw conversionError;
+                }
             }
 
             // Create AbortController for this request
@@ -332,6 +491,11 @@ export const ConsultationProvider = ({ children }) => {
                     responseContent = data.message || data.response || data.answer || JSON.stringify(data);
                 }
 
+                // Add special message for YouTube conversion
+                if (materialSource === 'youtube') {
+                    responseContent = `Video YouTube berhasil dikonversi ke MP3 dan diproses! ${responseContent}`;
+                }
+
                 const botResponse = {
                     id: Date.now(),
                     type: 'bot',
@@ -341,16 +505,18 @@ export const ConsultationProvider = ({ children }) => {
                 return [...filteredMessages, botResponse];
             });
 
-            toast.success("Materi berhasil diproses!");
+            toast.success(materialSource === 'youtube' ?
+                "Video YouTube berhasil diterima !" :
+                "Materi berhasil diproses!"
+            );
             return { success: true, data };
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('Request was cancelled');
                 return { success: false, cancelled: true };
             }
 
-            console.error('Error processing materials:', error);
+            console.error('❌ Error processing materials:', error);
 
             // Reset states jika error
             setMaterialsProcessed(false);
@@ -358,7 +524,7 @@ export const ConsultationProvider = ({ children }) => {
             setProcessedFilesMetadata([]);
             sessionStorage.removeItem('processed_files_data');
             sessionStorage.removeItem('processed_files_metadata');
-            
+
             if (materialSource === 'youtube') {
                 setProcessedYoutubeUrl('');
                 sessionStorage.removeItem('processed_youtube_url');
@@ -367,11 +533,16 @@ export const ConsultationProvider = ({ children }) => {
             const errorResponse = {
                 id: Date.now(),
                 type: 'bot',
-                content: 'Maaf, terjadi kesalahan saat memproses materi. Silakan coba lagi.'
+                content: materialSource === 'youtube' ?
+                    'Maaf, terjadi kesalahan saat mengkonversi atau memproses video YouTube. Silakan coba lagi.' :
+                    'Maaf, terjadi kesalahan saat memproses materi. Silakan coba lagi.'
             };
             setMessages(prev => [...prev, errorResponse]);
 
-            toast.error("Gagal memproses materi. Silakan coba lagi.");
+            toast.error(materialSource === 'youtube' ?
+                "Gagal mengkonversi/memproses video YouTube. Silakan coba lagi." :
+                "Gagal memproses materi. Silakan coba lagi."
+            );
             return { success: false, error };
 
         } finally {
@@ -440,7 +611,7 @@ export const ConsultationProvider = ({ children }) => {
             formData.append('query', query);
 
             // ALWAYS add processed files if available (both for new messages and edits)
-            if (materialSource === 'upload' && processedFiles.length > 0) {
+            if (processedFiles.length > 0) {
                 processedFiles.forEach((file) => {
                     formData.append('files', file);
                 });
@@ -544,7 +715,6 @@ export const ConsultationProvider = ({ children }) => {
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('Request was cancelled');
                 return { success: false, cancelled: true };
             }
 
@@ -586,6 +756,7 @@ export const ConsultationProvider = ({ children }) => {
         setBackgroundTasks(new Set());
         setIsProcessing(false);
         setIsBotResponding(false);
+        setIsConvertingYoutube(false);
     };
 
     // Function untuk clear consultation data
@@ -624,6 +795,11 @@ export const ConsultationProvider = ({ children }) => {
         return isBotResponding;
     };
 
+    // Function untuk check apakah sedang converting YouTube
+    const isCurrentlyConvertingYoutube = () => {
+        return isConvertingYoutube;
+    };
+
     // Cleanup saat component unmount
     useEffect(() => {
         return () => {
@@ -648,6 +824,7 @@ export const ConsultationProvider = ({ children }) => {
         isProcessing,
         isBotResponding,
         backgroundTasks,
+        isConvertingYoutube,
 
         // Functions
         processMaterials,
@@ -656,7 +833,10 @@ export const ConsultationProvider = ({ children }) => {
         cancelAllRequests,
         hasBackgroundTasks,
         isBotCurrentlyResponding,
+        isCurrentlyConvertingYoutube,
         validateMaterialAvailability,
+        convertYoutubeToMp3,
+        extractYouTubeId,
 
         // Utility functions
         fileToMetadata,
