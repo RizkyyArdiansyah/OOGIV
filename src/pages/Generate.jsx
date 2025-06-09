@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Youtube, File, X, HelpCircle, Download, ArrowLeft, Copy } from 'lucide-react';
-import axios from 'axios';
 import jsPDF from 'jspdf';
 import { toast } from 'react-toastify';
 import { useGenerate } from '../contexts/GenerateContext';
@@ -416,7 +415,7 @@ const GeneratePage = () => {
                 <div className="flex flex-col xl:flex-row gap-4 lg:gap-6 xl:gap-8">
                     {/* Form Section - Responsive width */}
                     <div className="w-full xl:w-2/5 2xl:w-1/3">
-                        <div className="rounded-2xl bg-white shadow-lg border border-gray-200 p-5 sm:p-4 lg:p-6">
+                        <div className="rounded-2xl bg-white shadow-lg border-t-6 border-t-red-custom p-5 sm:p-4 lg:p-6">
                             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
                                 {/* Material Type Selection */}
                                 <div>
@@ -642,7 +641,7 @@ const GeneratePage = () => {
 
                     {/* Results Container - Responsive width */}
                     <div className="w-full xl:w-3/5 2xl:w-2/3">
-                        <div className="rounded-2xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 xl:sticky xl:top-24 bg-white">
+                        <div className="rounded-2xl shadow-lg border-b-6 border-b-red-custom p-3 sm:p-4 lg:p-6 xl:sticky xl:top-24 bg-white">
                             {/* Header dengan tombol Hapus Memory */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
                                 <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">Hasil Generate</h3>

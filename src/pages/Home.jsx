@@ -61,7 +61,7 @@ const HomePage = () => {
     ];
 
     const handleCardClick = (feature) => {
-        if (feature.id === 'correction') {
+        if (feature.id === 'next') {
             toast.info('Fitur akan segera hadir');
             return;
         }
@@ -137,10 +137,10 @@ const HomePage = () => {
                             </div>
 
                             <div
-                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
+                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 md:p-10 lg:p-10 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
                             >
                                 {/* Coming Soon Overlay for Correction Card */}
-                                {feature.id === 'correction' && activeCard === 'correction' && (
+                                {feature.id === 'nextfitur' && activeCard === 'nextfitur' && (
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/95 to-blue-50/50 backdrop-blur-sm flex items-center justify-center z-20 opacity-0 scale-90 hover:opacity-100 hover:scale-100 transition-all duration-500 ease-out rounded-2xl">
                                         {/* Main Coming Soon Text */}
                                         <div className="relative">

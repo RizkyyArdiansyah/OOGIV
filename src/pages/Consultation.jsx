@@ -418,7 +418,7 @@ export default function Consultation() {
                     )}
                   </div>
                   <div className={`px-4 py-3 rounded-lg relative group ${message.type === 'user'
-                    ? 'bg-gray-50 text-slate-800'
+                    ? 'bg-gray-50 text-slate-800 select-text'
                     : 'bg-gray-100 text-gray-800 select-text'
                     }`}>
 
@@ -483,7 +483,7 @@ export default function Consultation() {
                               toast.success('Pesan berhasil disalin!');
                             }}
                             className={`absolute p-1.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 cursor-pointer ${message.type === 'user'
-                              ? 'text-gray-600 -top-5 right-8'
+                              ? 'text-gray-600 hidden'
                               : 'text-gray-600 -bottom-8 left-0'
                               }`}
                             title="Salin"
@@ -498,7 +498,7 @@ export default function Consultation() {
                                 setEditingMessageId(message.id);
                                 setEditedContent(message.content);
                               }}
-                              className="absolute p-1.5 rounded transition-opacity duration-200 text-gray-600 -top-5 right-0 cursor-pointer"
+                              className="absolute p-1.5 rounded transition-opacity duration-200 text-gray-600 hidden cursor-pointer"
                               title="Edit"
                             >
                               <Edit className='w-4 h-4' />
