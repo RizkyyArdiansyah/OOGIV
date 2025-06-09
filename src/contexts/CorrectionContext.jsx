@@ -37,11 +37,11 @@ export const CorrectionProvider = ({ children }) => {
             const formData = new FormData();
 
             // Append key answer file (only one file allowed)
-            formData.append('files', keyFiles[0]);
+            formData.append('kunci_jawaban', keyFiles[0]);
 
             // Append student answer files (multiple files allowed)
             studentFiles.forEach((file, index) => {
-                formData.append(`files`, file);
+                formData.append(`jawaban_siswa`, file);
             });
 
             const response = await axios.post(`${API_BASE_URL}/koreksi`, formData,
@@ -55,10 +55,15 @@ export const CorrectionProvider = ({ children }) => {
                 }
             );
 
-            console.log('Full response:', response.data); // Debug log
-
+            // Handle response structure based on the API format
             if (response.data && response.data.oogiv_response) {
-                setCorrectionResult(response.data.oogiv_response);
+                // Check if oogiv_response has daftar_nilai array
+                if (response.data.oogiv_response.daftar_nilai && Array.isArray(response.data.oogiv_response.daftar_nilai)) {
+                    setCorrectionResult(response.data.oogiv_response.daftar_nilai);
+                } else {
+                    // If daftar_nilai doesn't exist, use oogiv_response directly
+                    setCorrectionResult(response.data.oogiv_response);
+                }
                 toast.success('Koreksi berhasil diselesaikan!');
             } else if (response.data) {
                 // Jika struktur response berbeda, coba langsung gunakan response.data

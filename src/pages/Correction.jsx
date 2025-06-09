@@ -164,11 +164,12 @@ const CorrectionPage = () => {
 
             // Prepare data for Excel
             const excelData = [
-                ['No', 'Nama', 'Jawaban Benar', 'Nilai'], // Header
+                ['No', 'Nama', 'Jawaban Benar', 'Jawaban Salah', 'Nilai'], // Header
                 ...data.map((item, index) => [
                     index + 1,
                     item.siswa || item.nama || 'Tidak tersedia',
                     item.benar || item.correct || 0,
+                    item.salah || item.wrong || 0,
                     item.nilai || item.score || 0
                 ])
             ];
@@ -180,6 +181,7 @@ const CorrectionPage = () => {
             ws['!cols'] = [
                 { wch: 5 },  // No
                 { wch: 25 }, // Nama
+                { wch: 15 }, // Jawaban Benar
                 { wch: 15 }, // Jawaban Benar
                 { wch: 10 }  // Nilai
             ];
@@ -439,15 +441,15 @@ const CorrectionPage = () => {
                                     </div>
 
                                     {/* Summary Statistics */}
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 flex-shrink-0">
+                                    <div className="grid grid-cols-3 gap-3 flex-shrink-0">
                                         {/* Total Students */}
                                         <div className="bg-blue-custom/20 hover:bg-blue-custom/60 rounded-2xl p-3 text-center cursor-pointer">
                                             <div className="flex justify-center mb-2">
-                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                                     <BookOpen className="w-5 h-5 text-blue-600" />
                                                 </div>
                                             </div>
-                                            <h3 className="text-sm font-medium text-gray-600 mb-1">Total Siswa</h3>
+                                            <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Total Siswa</h3>
                                             <p className="text-lg font-bold text-blue-800">
                                                 {Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response.length :
                                                     Array.isArray(correctionResult) ? correctionResult.length : 1}
@@ -457,11 +459,11 @@ const CorrectionPage = () => {
                                         {/* Average Score */}
                                         <div className="bg-emerald-500/20 hover:bg-emerald-500/60 rounded-2xl p-3 text-center cursor-pointer">
                                             <div className="flex justify-center mb-2">
-                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-full flex items-center justify-center">
                                                     <CheckCircle className="w-5 h-5 text-green-600" />
                                                 </div>
                                             </div>
-                                            <h3 className="text-sm font-medium text-gray-600 mb-1">Rata-rata Nilai</h3>
+                                            <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Rata-rata Nilai</h3>
                                             <p className="text-lg font-bold text-green-800">
                                                 {(() => {
                                                     const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
@@ -473,13 +475,13 @@ const CorrectionPage = () => {
                                         </div>
 
                                         {/* Highest Score */}
-                                        <div className="col-span-2 md:col-span-1 mx-22 bg-yellow-custom/20 hover:bg-yellow-custom/60 rounded-2xl p-3 text-center cursor-pointer">
+                                        <div className=" bg-yellow-custom/20 hover:bg-yellow-custom/60 rounded-2xl p-3 text-center cursor-pointer">
                                             <div className="flex justify-center mb-2">
-                                                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                                                     <Trophy className="w-5 h-5 text-yellow-600" />
                                                 </div>
                                             </div>
-                                            <h3 className="text-sm font-medium text-gray-600 mb-1">Nilai Tertinggi</h3>
+                                            <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Nilai Tertinggi</h3>
                                             <p className="text-lg font-bold text-yellow-800">
                                                 {(() => {
                                                     const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
@@ -521,14 +523,28 @@ const CorrectionPage = () => {
                                                             Jawaban Benar
                                                         </th>
                                                         <th className="px-4 py-3 text-center text-xs font-medium text-gray-950 uppercase tracking-wider border-b">
+                                                            Jawaban Salah
+                                                        </th>
+                                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-950 uppercase tracking-wider border-b">
                                                             Nilai
                                                         </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
                                                     {(() => {
-                                                        const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
-                                                            Array.isArray(correctionResult) ? correctionResult : [correctionResult];
+                                                        // Handle the API response
+                                                        let data = [];
+
+                                                        if (Array.isArray(correctionResult)) {
+                                                            // If correctionResult is already an array (daftar_nilai)
+                                                            data = correctionResult;
+                                                        } else if (correctionResult && correctionResult.daftar_nilai && Array.isArray(correctionResult.daftar_nilai)) {
+                                                            // If correctionResult has daftar_nilai property
+                                                            data = correctionResult.daftar_nilai;
+                                                        } else if (correctionResult && typeof correctionResult === 'object') {
+                                                            // If correctionResult is a single object, wrap it in array
+                                                            data = [correctionResult];
+                                                        }
 
                                                         return data.map((item, index) => (
                                                             <tr key={index} className="hover:bg-blue-custom text-slate-700 hover:text-white">
@@ -536,10 +552,13 @@ const CorrectionPage = () => {
                                                                     {index + 1}
                                                                 </td>
                                                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium border-b border-b-gray-500 text-center">
-                                                                    {item.siswa || item.nama || 'Tidak tersedia'}
+                                                                    {item.nama || item.siswa || 'Tidak tersedia'}
                                                                 </td>
                                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
                                                                     {item.benar || item.correct || 0}
+                                                                </td>
+                                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
+                                                                    {item.salah || item.wrong || 0}
                                                                 </td>
                                                                 <td className="px-4 py-4 whitespace-nowrap text-center border-b">
                                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(item.nilai || item.score || 0, true)}`}>
