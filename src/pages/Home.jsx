@@ -120,7 +120,7 @@ const HomePage = () => {
                 </div>
 
                 {/* Features Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9 md:gap-8 px-4 md:px-6 max-w-7xl mx-auto mb-12 md:mb-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9 md:gap-8 px-4 md:px-6 max-w-7xl mx-auto mb-12 md:mb-auto">
                     {features.map((feature, index) => (
                         <div
                             key={feature.id}
@@ -137,7 +137,7 @@ const HomePage = () => {
                             </div>
 
                             <div
-                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 md:p-10 lg:p-10 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
+                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 md:p-8 lg:p-8 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
                             >
                                 {/* Coming Soon Overlay for Correction Card */}
                                 {feature.id === 'nextfitur' && activeCard === 'nextfitur' && (
