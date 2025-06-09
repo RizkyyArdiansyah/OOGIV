@@ -94,7 +94,7 @@ const HomePage = () => {
             {/* Main Content */}
             <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10 w-full">
                 {/* Hero Section */}
-                <div className="text-center mb-12 md:mb-24 select-none">
+                <div className="text-center mb-12 md:mb-20 select-none">
                     <div className="animate-fade-in-up">
                         <h2 className='font-bold text-[1.7rem] md:text-5xl mb-8 text-black/80 min-h-[3rem] md:min-h-[4rem]'>
                             {typedText.split('OOGIV !').map((part, index) => (
@@ -113,7 +113,7 @@ const HomePage = () => {
                         </h2>
                     </div>
                     <div className="animate-fade-in-up-delay">
-                        <p className="text-[0.8rem] md:text-lg text-slate-800/75 max-w-3xl mx-auto font-medium">
+                        <p className="text-[0.8rem] md:text-lg text-slate-800/75 max-w-3xl md:mx-auto mx-8 font-medium">
                             Dengan teknologi AI yang mudah digunakan, OOGIV otomatis menyusun materi, membuat soal, dan mengoreksi tugas langsung dari file Anda.
                         </p>
                     </div>
@@ -137,7 +137,7 @@ const HomePage = () => {
                             </div>
 
                             <div
-                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 md:p-8 lg:p-8 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
+                                className={`h-full ${feature.bgPattern} rounded-4xl p-6 md:p-8 lg:p-7 shadow-lg border-b-8 ${feature.borderColor} border-t-0 transition-all duration-300 group-hover:shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-sm`}
                             >
                                 {/* Coming Soon Overlay for Correction Card */}
                                 {feature.id === 'nextfitur' && activeCard === 'nextfitur' && (
@@ -213,7 +213,7 @@ const HomePage = () => {
 
             {/* Footer - Always at bottom */}
             <footer className="bg-gray-100 shadow-lg relative z-10 mt-auto">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 py-4">
                     <div className="flex items-center justify-center">
                         <p className="text-slate-800/75 text-xs md:text-sm font-bold text-center animate-fade-in">
                             © 2025 OOGIV - Made with ♥ for all teachers

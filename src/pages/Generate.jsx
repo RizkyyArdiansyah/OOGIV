@@ -411,12 +411,12 @@ const GeneratePage = () => {
                 </div>
             </header>
 
-            <div className="w-full max-w-full mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 select-none">
-                <div className="flex flex-col xl:flex-row gap-4 lg:gap-6 xl:gap-8">
+            <div className="w-full max-w-full mx-auto px-5 md:px-10 lg:px-6 xl:px-8 py-4 select-none">
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 xl:gap-8">
                     {/* Form Section - Responsive width */}
-                    <div className="w-full xl:w-2/5 2xl:w-1/3">
+                    <div className="w-full lg:w-2/5 2xl:w-1/3">
                         <div className="rounded-2xl bg-white shadow-lg border-t-6 border-t-red-custom p-5 sm:p-4 lg:p-6">
-                            <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                            <div className="space-y-4 md:space-y-6 lg:space-y-6">
                                 {/* Material Type Selection */}
                                 <div>
                                     <label className="flex items-center space-x-2 text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
@@ -621,7 +621,7 @@ const GeneratePage = () => {
                                 <button
                                     onClick={onGenerate}
                                     disabled={isGenerating}
-                                    className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold text-slate-950/70 hover:text-white transition-all duration-400 cursor-pointer ${!isGenerating
+                                    className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold text-slate-950/70 hover:text-white transition-all duration-400 cursor-pointer mb-4 ${!isGenerating
                                         ? 'bg-slate-100 outline-2 outline-soft-blue hover:bg-soft-blue shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
                                         : 'bg-gray-400 cursor-not-allowed'
                                         }`}
@@ -640,7 +640,7 @@ const GeneratePage = () => {
                     </div>
 
                     {/* Results Container - Responsive width */}
-                    <div className="w-full xl:w-3/5 2xl:w-2/3">
+                    <div className="w-full lg:w-3/5 2xl:w-2/3">
                         <div className="rounded-2xl shadow-lg border-b-6 border-b-red-custom p-3 sm:p-4 lg:p-6 xl:sticky xl:top-24 bg-white">
                             {/* Header dengan tombol Hapus Memory */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
