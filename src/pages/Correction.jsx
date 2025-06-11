@@ -13,7 +13,19 @@ const CorrectionPage = () => {
     const studentFileInputRef = useRef(null);
     const navigate = useNavigate();
 
-    const { isCorrecting, correctionResult, error, submitCorrection, resetCorrection } = useCorrectionContext();
+    const { isCorrecting, correctionResult, error, submitCorrection, resetCorrection, correctionStats, } = useCorrectionContext();
+    // Untuk data individual siswa
+    correctionStats?.students.map(siswa => ({
+        nama: siswa.nama,
+        jumlah_benar: siswa.jumlah_benar,
+        jumlah_salah: siswa.jumlah_salah,
+        nilai: siswa.nilai
+    }))
+
+    // Untuk statistik keseluruhan
+    const totalSiswa = correctionStats?.totalSiswa;
+    const nilaiRataRata = correctionStats?.nilaiRataRata;
+    const nilaiTertinggi = correctionStats?.nilaiTertinggi;
 
     const handleKeyDrag = (e) => {
         e.preventDefault();
@@ -155,24 +167,35 @@ const CorrectionPage = () => {
     // Function to download Excel
     const downloadExcel = () => {
         try {
-            // Get the table data
-            const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
-                Array.isArray(correctionResult) ? correctionResult : [correctionResult];
+            // Check if correctionStats exists and has students data
+            if (!correctionStats || !correctionStats.students || correctionStats.students.length === 0) {
+                toast.error('Tidak ada data untuk didownload!');
+                return;
+            }
 
             // Create workbook
             const wb = XLSX.utils.book_new();
 
-            // Prepare data for Excel
+            // Prepare main data for Excel
             const excelData = [
                 ['No', 'Nama', 'Jawaban Benar', 'Jawaban Salah', 'Nilai'], // Header
-                ...data.map((item, index) => [
+                ...correctionStats.students.map((siswa, index) => [
                     index + 1,
-                    item.siswa || item.nama || 'Tidak tersedia',
-                    item.benar || item.correct || 0,
-                    item.salah || item.wrong || 0,
-                    item.nilai || item.score || 0
+                    siswa.nama,
+                    siswa.jumlah_benar,
+                    siswa.jumlah_salah,
+                    siswa.nilai
                 ])
             ];
+
+            // Add summary statistics at the end
+            excelData.push(
+                [], // Empty row
+                ['Statistik Penilaian'], // Summary header
+                ['Total Siswa', correctionStats.totalSiswa],
+                ['Nilai Rata-rata', correctionStats.nilaiRataRata],
+                ['Nilai Tertinggi', correctionStats.nilaiTertinggi]
+            );
 
             // Create worksheet
             const ws = XLSX.utils.aoa_to_sheet(excelData);
@@ -180,40 +203,96 @@ const CorrectionPage = () => {
             // Set column widths
             ws['!cols'] = [
                 { wch: 5 },  // No
-                { wch: 25 }, // Nama
-                { wch: 15 }, // Jawaban Benar
-                { wch: 15 }, // Jawaban Benar
+                { wch: 20 }, // Nama
+                { wch: 10 }, // Jawaban Benar
+                { wch: 10 }, // Jawaban Salah
                 { wch: 10 }  // Nilai
             ];
 
-            // Style the header row
+            // Style the main header row
             const headerStyle = {
                 font: { bold: true },
-                fill: { fgColor: { rgb: "FFC000" } }, // Yellow background
-                alignment: { horizontal: "center", vertical: "center" }
+                fill: { fgColor: { rgb: "3B82F6" } }, // Blue background
+                alignment: { horizontal: "center", vertical: "center" },
             };
 
-            // Apply header style
-            ['A1', 'B1', 'C1', 'D1'].forEach(cell => {
+            // Style for summary section
+            const summaryHeaderStyle = {
+                font: { bold: true },
+                fill: { fgColor: { rgb: "10B981" } }, // Green background
+                alignment: { horizontal: "center", vertical: "center" },
+            };
+
+            // Apply main header style (Row 1)
+            ['A1', 'B1', 'C1', 'D1', 'E1'].forEach(cell => {
                 if (ws[cell]) {
                     ws[cell].s = headerStyle;
                 }
             });
 
+            // Calculate the row for summary section
+            const summaryStartRow = correctionStats.students.length + 3; // +1 for header, +1 for empty row, +1 for summary header
+
+            // Apply summary header style
+            const summaryHeaderCell = `A${summaryStartRow}`;
+            if (ws[summaryHeaderCell]) {
+                ws[summaryHeaderCell].s = summaryHeaderStyle;
+            }
+
+            // Style for summary data rows
+            const summaryDataStyle = {
+                font: { bold: true },
+                fill: { fgColor: { rgb: "F3F4F6" } }, // Light gray background
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+
+            // Apply summary data style
+            for (let i = 1; i <= 3; i++) {
+                const rowNum = summaryStartRow + i;
+                ['A', 'B'].forEach(col => {
+                    const cell = `${col}${rowNum}`;
+                    if (ws[cell]) {
+                        ws[cell].s = summaryDataStyle;
+                    }
+                });
+            }
+
+            // Add borders to all cells with data
+            const totalRows = excelData.length;
+            const borderStyle = {
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+
+            // Apply borders to main data table
+            for (let row = 1; row <= correctionStats.students.length + 1; row++) {
+                ['A', 'B', 'C', 'D', 'E'].forEach(col => {
+                    const cell = `${col}${row}`;
+                    if (ws[cell]) {
+                        ws[cell].s = { ...ws[cell].s, ...borderStyle };
+                    }
+                });
+            }
+
             // Add worksheet to workbook
             XLSX.utils.book_append_sheet(wb, ws, 'Hasil Koreksi');
 
-            // Generate filename with current date
+            // Generate filename with current date and time
             const now = new Date();
-            const filename = `Hasil_Koreksi_${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}.xlsx`;
+            const filename = `Hasil_Koreksi_${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
 
             // Download the file
             XLSX.writeFile(wb, filename);
 
-            // Show success message (optional)
-            toast.success('File Excel berhasil didownload!');
+            // Show success message
+            toast.success(`File Excel berhasil didownload: ${filename}`);
 
         } catch (error) {
+            console.error('Download Excel error:', error);
             toast.error('Gagal mendownload file Excel. Silakan coba lagi.');
         }
     };
@@ -398,7 +477,7 @@ const CorrectionPage = () => {
                         </div>
                     </div>
 
-                    {/* Results Container - Responsive width with max height */}
+                    {/* Results Container */}
                     <div className="w-full md:w-3/5 2xl:w-2/3">
                         <div className="rounded-2xl shadow-lg border-b-sky-300 border-b-6 p-3 sm:p-4 lg:p-6 xl:sticky xl:top-24 bg-white max-h-[85vh] overflow-hidden flex flex-col">
                             {!correctionResult && !error && !isCorrecting && (
@@ -434,7 +513,7 @@ const CorrectionPage = () => {
                                 </div>
                             )}
 
-                            {correctionResult && (
+                            {correctionResult && correctionStats && (
                                 <div className="space-y-4 flex flex-col min-h-0">
                                     <div className="text-center border-b pb-2 flex-shrink-0">
                                         <h2 className="text-lg font-bold text-gray-800 mb-1">Hasil Koreksi</h2>
@@ -451,8 +530,7 @@ const CorrectionPage = () => {
                                             </div>
                                             <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Total Siswa</h3>
                                             <p className="text-lg font-bold text-blue-800">
-                                                {Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response.length :
-                                                    Array.isArray(correctionResult) ? correctionResult.length : 1}
+                                                {correctionStats.totalSiswa}
                                             </p>
                                         </div>
 
@@ -465,17 +543,12 @@ const CorrectionPage = () => {
                                             </div>
                                             <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Rata-rata Nilai</h3>
                                             <p className="text-lg font-bold text-green-800">
-                                                {(() => {
-                                                    const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
-                                                        Array.isArray(correctionResult) ? correctionResult : [correctionResult];
-                                                    const total = data.reduce((sum, item) => sum + (item.nilai || item.score || 0), 0);
-                                                    return Math.round(total / data.length);
-                                                })()}
+                                                {correctionStats.nilaiRataRata}
                                             </p>
                                         </div>
 
                                         {/* Highest Score */}
-                                        <div className=" bg-yellow-custom/20 hover:bg-yellow-custom/60 rounded-2xl p-3 text-center cursor-pointer">
+                                        <div className="bg-yellow-custom/20 hover:bg-yellow-custom/60 rounded-2xl p-3 text-center cursor-pointer">
                                             <div className="flex justify-center mb-2">
                                                 <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                                                     <Trophy className="w-5 h-5 text-yellow-600" />
@@ -483,11 +556,7 @@ const CorrectionPage = () => {
                                             </div>
                                             <h3 className="text-xs md:text-sm font-medium text-gray-600 mb-1">Nilai Tertinggi</h3>
                                             <p className="text-lg font-bold text-yellow-800">
-                                                {(() => {
-                                                    const data = Array.isArray(correctionResult.oogiv_response) ? correctionResult.oogiv_response :
-                                                        Array.isArray(correctionResult) ? correctionResult : [correctionResult];
-                                                    return Math.max(...data.map(item => item.nilai || item.score || 0));
-                                                })()}
+                                                {correctionStats.nilaiTertinggi}
                                             </p>
                                         </div>
                                     </div>
@@ -531,43 +600,31 @@ const CorrectionPage = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
-                                                    {(() => {
-                                                        // Handle the API response
-                                                        let data = [];
-
-                                                        if (Array.isArray(correctionResult)) {
-                                                            // If correctionResult is already an array (daftar_nilai)
-                                                            data = correctionResult;
-                                                        } else if (correctionResult && correctionResult.daftar_nilai && Array.isArray(correctionResult.daftar_nilai)) {
-                                                            // If correctionResult has daftar_nilai property
-                                                            data = correctionResult.daftar_nilai;
-                                                        } else if (correctionResult && typeof correctionResult === 'object') {
-                                                            // If correctionResult is a single object, wrap it in array
-                                                            data = [correctionResult];
-                                                        }
-
-                                                        return data.map((item, index) => (
-                                                            <tr key={index} className="hover:bg-blue-custom text-slate-700 hover:text-white">
-                                                                <td className="px-4 py-4 whitespace-nowrap text-sm border-b border-b-gray-500 text-center">
-                                                                    {index + 1}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium border-b border-b-gray-500 text-center">
-                                                                    {item.nama || item.siswa || 'Tidak tersedia'}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
-                                                                    {item.benar || item.correct || 0}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
-                                                                    {item.salah || item.wrong || 0}
-                                                                </td>
-                                                                <td className="px-4 py-4 whitespace-nowrap text-center border-b">
-                                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(item.nilai || item.score || 0, true)}`}>
-                                                                        {item.nilai || item.score || 0}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                        ));
-                                                    })()}
+                                                    {correctionStats.students.map((siswa, index) => (
+                                                        <tr key={index} className="hover:bg-blue-custom text-slate-700 hover:text-white">
+                                                            <td className="px-4 py-4 whitespace-nowrap text-sm border-b border-b-gray-500 text-center">
+                                                                {index + 1}
+                                                            </td>
+                                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium border-b border-b-gray-500 text-center">
+                                                                {siswa.nama}
+                                                            </td>
+                                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                    {siswa.jumlah_benar}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-center border-b border-b-gray-500">
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                    {siswa.jumlah_salah}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-4 whitespace-nowrap text-center border-b">
+                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(siswa.nilai, true)}`}>
+                                                                    {siswa.nilai}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
                                                 </tbody>
                                             </table>
                                         </div>

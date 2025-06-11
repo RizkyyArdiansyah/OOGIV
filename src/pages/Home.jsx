@@ -221,7 +221,7 @@ const HomePage = () => {
                     </div>
                 </div>
             </footer>
-            
+
         </div>
     );
 };

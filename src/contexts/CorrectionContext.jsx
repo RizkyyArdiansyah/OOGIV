@@ -16,7 +16,42 @@ export const CorrectionProvider = ({ children }) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const [isCorrecting, setIsCorrecting] = useState(false);
     const [correctionResult, setCorrectionResult] = useState(null);
+    const [correctionStats, setCorrectionStats] = useState(null);
     const [error, setError] = useState(null);
+
+    // Function to calculate statistics from the correction results
+    const calculateStats = (hasilNilai) => {
+        if (!hasilNilai || !Array.isArray(hasilNilai) || hasilNilai.length === 0) {
+            return null;
+        }
+
+        const totalSiswa = hasilNilai.length;
+        const totalNilai = hasilNilai.reduce((sum, siswa) => sum + siswa.nilai, 0);
+        const nilaiRataRata = Math.round(totalNilai / totalSiswa * 100) / 100; // Round to 2 decimal places
+        const nilaiTertinggi = Math.max(...hasilNilai.map(siswa => siswa.nilai));
+
+        // Calculate total wrong answers for each student
+        const studentsWithWrongCount = hasilNilai.map(siswa => {
+            const totalSoal = Object.keys(siswa.koreksi).length;
+            const jumlahSalah = totalSoal - siswa.jumlah_benar;
+            
+            return {
+                nama: siswa.nama,
+                jumlah_benar: siswa.jumlah_benar,
+                jumlah_salah: jumlahSalah,
+                nilai: siswa.nilai,
+                jawaban_siswa: siswa.jawaban_siswa,
+                koreksi: siswa.koreksi
+            };
+        });
+
+        return {
+            totalSiswa,
+            nilaiRataRata,
+            nilaiTertinggi,
+            students: studentsWithWrongCount
+        };
+    };
 
     const submitCorrection = async (keyFiles, studentFiles) => {
         if (!keyFiles || keyFiles.length === 0) {
@@ -32,6 +67,7 @@ export const CorrectionProvider = ({ children }) => {
         setIsCorrecting(true);
         setError(null);
         setCorrectionResult(null);
+        setCorrectionStats(null);
 
         try {
             const formData = new FormData();
@@ -57,20 +93,23 @@ export const CorrectionProvider = ({ children }) => {
 
             // Handle response structure based on the API format
             if (response.data && response.data.oogiv_response) {
-                // Check if oogiv_response has daftar_nilai array
-                if (response.data.oogiv_response.daftar_nilai && Array.isArray(response.data.oogiv_response.daftar_nilai)) {
-                    setCorrectionResult(response.data.oogiv_response.daftar_nilai);
+                const oogiv_response = response.data.oogiv_response;
+                
+                // Check if hasil_nilai exists and is an array
+                if (oogiv_response.hasil_nilai && Array.isArray(oogiv_response.hasil_nilai)) {
+                    // Set the main correction result
+                    setCorrectionResult(oogiv_response);
+                    
+                    // Calculate and set statistics
+                    const stats = calculateStats(oogiv_response.hasil_nilai);
+                    setCorrectionStats(stats);
+                    
+                    toast.success('Koreksi berhasil diselesaikan!');
                 } else {
-                    // If daftar_nilai doesn't exist, use oogiv_response directly
-                    setCorrectionResult(response.data.oogiv_response);
+                    throw new Error('Format hasil_nilai tidak valid atau tidak ditemukan');
                 }
-                toast.success('Koreksi berhasil diselesaikan!');
-            } else if (response.data) {
-                // Jika struktur response berbeda, coba langsung gunakan response.data
-                setCorrectionResult(response.data);
-                toast.success('Koreksi berhasil diselesaikan!');
             } else {
-                throw new Error('Format response tidak valid');
+                throw new Error('Format response tidak valid - oogiv_response tidak ditemukan');
             }
 
         } catch (error) {
@@ -95,6 +134,9 @@ export const CorrectionProvider = ({ children }) => {
             } else if (error.code === 'ECONNABORTED') {
                 // Timeout error
                 errorMessage = 'Proses koreksi timeout. Silakan coba lagi';
+            } else if (error.message) {
+                // Custom error messages
+                errorMessage = error.message;
             }
 
             setError(errorMessage);
@@ -106,6 +148,7 @@ export const CorrectionProvider = ({ children }) => {
 
     const resetCorrection = () => {
         setCorrectionResult(null);
+        setCorrectionStats(null);
         setError(null);
         setIsCorrecting(false);
     };
@@ -113,6 +156,7 @@ export const CorrectionProvider = ({ children }) => {
     const value = {
         isCorrecting,
         correctionResult,
+        correctionStats,
         error,
         submitCorrection,
         resetCorrection
