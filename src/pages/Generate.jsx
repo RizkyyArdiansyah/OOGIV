@@ -162,7 +162,7 @@ const GeneratePage = () => {
             setGeneratedContent(null);
             setShowSuccessMessage(false);
 
-            toast.info('Soal berhasil dihapus');
+            toast.success('Soal berhasil dihapus');
 
         } catch (error) {
             toast.warn('Error clearing memory:', error);
@@ -778,7 +778,7 @@ const GeneratePage = () => {
                                     </div>
 
                                     {/* Download buttons */}
-                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                    <div className="flex lg:flex-col flex-row gap-3 sm:gap-4">
                                         <div className="flex-1 p-3 sm:p-4 bg-blue-50 rounded-xl border border-soft-blue">
                                             <h4 className="font-medium text-sky-500 mb-2 text-xs sm:text-sm">Unduh Soal</h4>
                                             <button
