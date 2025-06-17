@@ -457,7 +457,6 @@ export const ConsultationProvider = ({ children }) => {
             const response = await fetch(`${API_BASE_URL}/konsulai`, {
                 method: 'POST',
                 body: formData,
-                credentials: 'include',
                 signal: controller.signal
             });
 
@@ -580,6 +579,7 @@ export const ConsultationProvider = ({ children }) => {
         }
 
         const taskId = Date.now().toString();
+        let botMessageId = null; // Deklarasi di luar blok try
 
         try {
             // Set bot responding state
@@ -597,7 +597,7 @@ export const ConsultationProvider = ({ children }) => {
             setBackgroundTasks(prev => new Set([...prev, taskId]));
 
             // Create placeholder bot message
-            const botMessageId = Date.now() + 1;
+            botMessageId = Date.now() + 1; // Assign value tanpa re-deklarasi
             setMessages(prev => [
                 ...prev,
                 {
@@ -720,14 +720,17 @@ export const ConsultationProvider = ({ children }) => {
 
             console.error('Error sending message:', error);
 
-            const errorContent = 'Maaf, terjadi kesalahan saat memproses pertanyaan Anda. Silakan coba lagi.';
-            setMessages(prev =>
-                prev.map(msg =>
-                    msg.id === botMessageId
-                        ? { ...msg, content: errorContent }
-                        : msg
-                )
-            );
+            // Pastikan botMessageId ada sebelum mengupdate messages
+            if (botMessageId) {
+                const errorContent = 'Maaf, terjadi kesalahan saat memproses pertanyaan Anda. Silakan coba lagi.';
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === botMessageId
+                            ? { ...msg, content: errorContent }
+                            : msg
+                    )
+                );
+            }
 
             return { success: false, error };
 

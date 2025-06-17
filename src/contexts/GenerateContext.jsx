@@ -207,7 +207,6 @@ export const GenerateProvider = ({ children }) => {
                     accept: 'application/json',
                 },
                 timeout: 120000,
-                withCredentials: true,
             });
 
             setGeneratedContent(response.data);
