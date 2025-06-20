@@ -20,17 +20,13 @@ export const GenerateProvider = ({ children }) => {
         // Clear any other related localStorage items if needed
     };
 
-    // Function to convert YouTube URL to MP3 file
+    // Function to convert YouTube URL to MP3 file (now returns file directly without storing)
     const convertYoutubeToMp3 = async (youtubeUrl) => {
         try {
             setIsConvertingYoutube(true);
             toast.info('Memproses URL Youtube...');
 
-            // Clear previous data when starting new YouTube conversion
-            clearPreviousData();
-
-            // Using a YouTube to MP3 conversion service (example using rapidapi or similar service)
-            // You'll need to replace this with your preferred YouTube to MP3 API
+            // Using a YouTube to MP3 conversion service
             const response = await axios.get(`${YT_URL}`, {
                 params: { id: extractYouTubeId(youtubeUrl) },
                 headers: {
@@ -53,33 +49,33 @@ export const GenerateProvider = ({ children }) => {
                     type: 'audio/mpeg'
                 });
 
-                toast.success('Konversi berhasil!');
+                toast.success('URL berhasil diproses');
                 return mp3File;
             } else {
-                throw new Error('Gagal mengkonversi video ke MP3');
+                throw new Error('Gagal memproses URL');
             }
 
         } catch (error) {
             console.error('Error converting YouTube to MP3:', error);
-            let errorMessage = 'Gagal mengkonversi video YouTube ke MP3';
+            let errorMessage = 'URL tidak berhasil diproses';
 
             if (error.code === 'ECONNABORTED') {
-                errorMessage = 'Konversi timeout. Video terlalu panjang atau koneksi lambat.';
+                errorMessage = 'Proses terlalu lama. Coba lagi nanti atau pastikan koneksi internet stabil.';
             } else if (error.response) {
                 const { status, data } = error.response;
                 if (status === 400) {
-                    errorMessage = 'URL YouTube tidak valid.';
+                    errorMessage = 'Link video tidak valid. Pastikan link sudah benar.';
                 } else if (status === 404) {
                     errorMessage = 'Video tidak ditemukan atau tidak dapat diakses.';
                 } else if (status === 413) {
-                    errorMessage = 'Video terlalu besar untuk dikonversi.';
+                    errorMessage = 'Video terlalu besar untuk diproses. Coba gunakan video yang lebih pendek.';
                 } else if (status === 500) {
-                    errorMessage = 'Server error saat konversi. Silakan coba lagi.';
+                    errorMessage = 'Terjadi kesalahan sistem. Silakan coba beberapa saat lagi.';
                 } else {
                     errorMessage = data?.detail || data?.message || `Error konversi (${status})`;
                 }
             } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server konversi.';
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
             } else if (error.message) {
                 errorMessage = error.message;
             }
@@ -165,18 +161,6 @@ export const GenerateProvider = ({ children }) => {
             setIsGenerating(true);
             setError(null);
 
-            let mp3File = null;
-
-            // Convert YouTube URL to MP3 file if material type is youtube
-            if (materialType === 'youtube') {
-                try {
-                    mp3File = await convertYoutubeToMp3(youtubeUrl);
-                } catch (conversionError) {
-                    setIsGenerating(false);
-                    return false;
-                }
-            }
-
             // Clear previous data before generating new content
             clearPreviousData();
 
@@ -186,14 +170,20 @@ export const GenerateProvider = ({ children }) => {
             formData.append('tipe', questionType.toLowerCase());
             formData.append('level', questionLevel.toLowerCase());
 
-            // Only send the latest file/URL to API
-            if (materialType === 'youtube' && mp3File) {
-                // Only append the latest converted MP3 file
-                formData.append('files', mp3File);
+            // Handle YouTube URL conversion and direct API submission
+            if (materialType === 'youtube') {
+                try {
+                    // Convert YouTube URL to MP3 and directly append to formData
+                    const mp3File = await convertYoutubeToMp3(youtubeUrl);
+                    formData.append('files', mp3File);
+                } catch (conversionError) {
+                    setIsGenerating(false);
+                    return false;
+                }
             }
 
+            // Handle regular file uploads
             if (materialType === 'file') {
-                // Only append the latest uploaded files
                 uploadedFiles.forEach(file => {
                     if (file instanceof File) {
                         formData.append('files', file);
@@ -201,6 +191,8 @@ export const GenerateProvider = ({ children }) => {
                 });
             }
 
+            // Send request to API with converted MP3 or uploaded files
+            toast.info('Mengirim data ke server...');
             const response = await axios.post(`${API_BASE_URL}/buatsoal`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -210,19 +202,19 @@ export const GenerateProvider = ({ children }) => {
             });
 
             setGeneratedContent(response.data);
-            
-            // Save new metadata to localStorage
+
+            // Save metadata to localStorage (without file data)
             const metadata = {
                 subject: subject.trim(),
                 questionType,
                 questionLevel,
                 materialType,
-                youtubeUrl,
+                youtubeUrl: materialType === 'youtube' ? youtubeUrl : '',
                 questionCount,
-                timestamp: new Date().toISOString(), // Add timestamp for tracking
+                timestamp: new Date().toISOString(),
             };
             localStorage.setItem('generateMetadata', JSON.stringify(metadata));
-            
+
             toast.success("Generate soal berhasil!");
             return true;
 
@@ -239,7 +231,7 @@ export const GenerateProvider = ({ children }) => {
                 } else if (status === 422) {
                     errorMessage = data?.detail || 'Format data tidak sesuai. Periksa kembali input Anda.';
                 } else if (status === 413) {
-                    errorMessage = data?.detail;
+                    errorMessage = data?.detail || 'File terlalu besar untuk diproses.';
                 } else if (status === 500) {
                     errorMessage = 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
                 } else {

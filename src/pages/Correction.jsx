@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, File, ArrowLeft, CheckCircle, AlertCircle, Trophy, BookOpen, Download } from 'lucide-react';
+import { Upload, X, File, ArrowLeft, CheckCircle, AlertCircle, Trophy, BookOpen, Download, FileKey, UsersRound } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCorrectionContext } from '../contexts/CorrectionContext';
 
@@ -325,7 +325,10 @@ const CorrectionPage = () => {
                             <div className="space-y-4 sm:space-y-5">
                                 <div className="flex flex-col gap-y-3">
                                     {/* Upload Kunci Jawaban*/}
-                                    <label className='text-sm font-medium text-gray-700'>Upload Kunci Jawaban</label>
+                                    <div className="flex gap-2 text-center items-center">
+                                        <FileKey className='w-5 h-5' />
+                                        <label className='text-md font-medium text-gray-700'>Upload Kunci Jawaban</label>
+                                    </div>
                                     <div
                                         className={`relative border-2 border-dashed rounded-lg p-3 transition-all duration-200 ${keyDragActive
                                             ? 'border-blue-400 bg-blue-50'
@@ -391,7 +394,10 @@ const CorrectionPage = () => {
 
                                 <div className="flex flex-col gap-y-3">
                                     {/* Upload Jawaban siswa*/}
-                                    <label className='text-sm font-medium text-gray-700'>Upload Jawaban Siswa</label>
+                                    <div className="flex gap-2 text-center items-center">
+                                        <UsersRound className='w-5 h-5'/>
+                                        <label className='text-md font-medium text-gray-700'>Upload Jawaban Siswa</label>
+                                    </div>
                                     <div
                                         className={`relative border-2 border-dashed rounded-lg p-3 transition-all duration-200 ${studentDragActive
                                             ? 'border-blue-400 bg-blue-50'

@@ -1,37 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Youtube, File, X, HelpCircle, Download, ArrowLeft, Copy } from 'lucide-react';
+import { Upload, Youtube, File, X, Download, ArrowLeft, Copy, Sparkles, Link, Info} from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toast } from 'react-toastify';
 import { useGenerate } from '../contexts/GenerateContext';
-
-const Tooltip = ({ children, content }) => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    return (
-        <div className="relative inline-block">
-            <div
-                onMouseEnter={() => setIsVisible(true)}
-                onMouseLeave={() => setIsVisible(false)}
-            >
-                {children}
-            </div>
-            {isVisible && (
-                <div className="absolute z-50 px-3 py-1 text-xs md:text-sm text-white bg-gray-700 rounded-lg shadow-lg -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                    {content}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 const GeneratePage = () => {
     const [materialType, setMaterialType] = useState('file');
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [subject, setSubject] = useState('');
-    const [questionLevel, setQuestionLevel] = useState('');
+    const [questionLevel, setQuestionLevel] = useState('easy');
     const [questionType, setQuestionType] = useState('pg');
     const [questionCount, setQuestionCount] = useState('');
     const [dragActive, setDragActive] = useState(false);
@@ -235,7 +214,7 @@ const GeneratePage = () => {
                     const wrappedQuestion = doc.splitTextToSize(questionText, 170);
 
                     doc.text(wrappedQuestion, 20, yPosition);
-                    yPosition += wrappedQuestion.length * 7 + 5;
+                    yPosition += wrappedQuestion.length * 4 + 5;
 
                     // === Opsi Jawaban ===
                     if (Array.isArray(item.opsi)) {
@@ -252,7 +231,7 @@ const GeneratePage = () => {
                         });
                     }
 
-                    yPosition += 8; // Spasi antar soal
+                    yPosition += 6; // Spasi antar soal
                 });
 
                 doc.save(`Soal ${safeSubject}.pdf`);
@@ -304,8 +283,24 @@ const GeneratePage = () => {
     };
 
     const materialOptions = [
-        { value: 'file', label: 'Upload File', icon: <File className="block w-4 h-4 text-blue-custom" /> },
-        { value: 'youtube', label: 'URL YouTube', icon: <Youtube className="block w-4 h-4 text-red-custom" /> }
+        {
+            value: 'file',
+            icon: Upload,
+            title: 'Upload Document',
+            description: 'PDF, DOC, TXT files'
+        },
+        {
+            value: 'youtube',
+            icon: Link,
+            title: 'YouTube URL',
+            description: 'Video transcript analysis'
+        }
+    ];
+
+    const questionLevels = [
+        { value: 'Easy', label: 'Mudah' },
+        { value: 'Medium', label: 'Sedang' },
+        { value: 'Hard', label: 'Sulit' },
     ];
 
     const questionTypes = [
@@ -421,16 +416,13 @@ const GeneratePage = () => {
                                 <div>
                                     <label className="flex items-center space-x-2 text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
                                         <span className='text-sm sm:text-base'>Pilih Sumber Materi</span>
-                                        <Tooltip content="Pilih sumber materi yang akan digunakan untuk membuat soal">
-                                            <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                                        </Tooltip>
                                     </label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2 select-none w-full">
+                                    <div className="grid grid-cols-2 gap-4">
                                         {materialOptions.map((option) => (
                                             <label
                                                 key={option.value}
-                                                className={`flex items-center p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${materialType === option.value
-                                                    ? 'border-soft-blue bg-blue-50'
+                                                className={`relative flex flex-col items-center px-3 py-4 md:py-8 border-2 rounded-2xl cursor-pointer transition-all duration-200 bg-white hover:shadow-md ${materialType === option.value
+                                                    ? 'border-blue-600 bg-blue-50'
                                                     : 'border-gray-200 hover:border-gray-300'
                                                     }`}
                                             >
@@ -439,24 +431,24 @@ const GeneratePage = () => {
                                                     name="materialType"
                                                     value={option.value}
                                                     checked={materialType === option.value}
-                                                    onChange={(e) => {
-                                                        const selectedValue = e.target.value;
-                                                        setMaterialType(selectedValue);
-                                                    }}
+                                                    onChange={(e) => setMaterialType(e.target.value)}
                                                     className="sr-only"
                                                 />
-                                                <div className="flex items-center space-x-2 md:space-x-3">
-                                                    <div
-                                                        className={`w-4 h-4 md:w-5 md:h-5 rounded-full border-2 flex items-center justify-center ${materialType === option.value ? 'border-soft-blue' : 'border-gray-300'
-                                                            }`}
-                                                    >
-                                                        {materialType === option.value && (
-                                                            <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-soft-blue"></div>
-                                                        )}
-                                                    </div>
-                                                    {option.icon}
-                                                    <span className="font-medium text-xs sm:text-sm text-gray-700">{option.label}</span>
+
+                                                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center mb-4 transition-colors duration-200 ${materialType === option.value
+                                                    ? 'bg-blue-600'
+                                                    : 'bg-gray-400'
+                                                    }`}>
+                                                    <option.icon className="w-4 h-4 md:w-6 md:h-6 text-white" />
                                                 </div>
+
+                                                <h3 className="text-xs md:text-sm font-semibold text-gray-800 mb-2 text-center">
+                                                    {option.title}
+                                                </h3>
+
+                                                <p className="text-[0.7rem] md:text-xs text-gray-500 text-center">
+                                                    {option.description}
+                                                </p>
                                             </label>
                                         ))}
                                     </div>
@@ -478,6 +470,10 @@ const GeneratePage = () => {
                                                 className="text-xs sm:text-sm w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-950/90 focus:border-transparent outline-none transition-all duration-200"
                                             />
                                         </div>
+                                        <div className="flex py-3 px-2 mt-3 rounded-lg bg-blue-50 items-center text-center">
+                                            <Info color="#0804f6" strokeWidth={3} className='ml-1 mr-2 w-4 h-4' />
+                                            <span className='text-xs text-gray-600 font-medium'>Durasi maksimal video 15 Menit</span>
+                                        </div>
                                     </div>
                                 )}
                                 {/* File Upload */}
@@ -487,39 +483,55 @@ const GeneratePage = () => {
                                             Upload File Materi
                                         </label>
                                         <div
-                                            className={`relative border-2 border-dashed h-auto rounded-xl p-4 sm:p-6 transition-all duration-200 ${dragActive
-                                                ? 'border-blue-400 bg-blue-50'
-                                                : 'border-gray-400 hover:border-gray-600'
+                                            className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-200 cursor-pointer ${dragActive
+                                                    ? 'border-blue-400 bg-blue-50'
+                                                    : 'border-gray-300 hover:border-gray-400'
                                                 }`}
                                             onDragEnter={handleDrag}
                                             onDragLeave={handleDrag}
                                             onDragOver={handleDrag}
                                             onDrop={handleDrop}
+                                            onClick={() => fileInputRef.current?.click()}
                                         >
                                             <div className="text-center">
-                                                <Upload className="mx-auto h-6 w-8 sm:h-8 sm:w-12 text-gray-400 mb-3 sm:mb-4" />
-                                                <p className="text-sm sm:text-base font-medium text-gray-700 mb-2">
-                                                    Drag and drop files here
+                                                {/* Circular upload icon */}
+                                                <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-6">
+                                                    <Upload className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                                </div>
+
+                                                {/* Main heading */}
+                                                <h3 className="text-md md:text-xl font-semibold text-gray-800 mb-3">
+                                                    Pilih Dokumen
+                                                </h3>
+
+                                                {/* Subtitle */}
+                                                <p className="text-sm text-gray-500 mb-6">
+                                                    Drag and drop here • limit 5MB per upload
                                                 </p>
-                                                <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                                                    Limit 5MB per upload • PDF, DOCX, PPTX, TXT
-                                                </p>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors duration-200 cursor-pointer"
-                                                >
-                                                    Browse files
-                                                </button>
+
+                                                {/* File type badges */}
+                                                <div className="flex justify-center gap-2">
+                                                    <span className="px-3 py-1 bg-blue-100 text-blue-600 text-sm font-medium rounded-full">
+                                                        PDF
+                                                    </span>
+                                                    <span className="px-3 py-1 bg-green-100 text-green-600 text-sm font-medium rounded-full">
+                                                        DOC
+                                                    </span>
+                                                    <span className="px-3 py-1 bg-purple-100 text-purple-600 text-sm font-medium rounded-full">
+                                                        TXT
+                                                    </span>
+                                                </div>
+
+                                                {/* Hidden file input */}
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    multiple
+                                                    accept=".pdf,.doc,.docx,.txt"
+                                                    onChange={(e) => handleFiles(e.target.files)}
+                                                    className="hidden"
+                                                />
                                             </div>
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                multiple
-                                                accept=".pdf,.docx,.pptx,.txt"
-                                                onChange={(e) => handleFiles(e.target.files)}
-                                                className="hidden"
-                                            />
                                         </div>
 
                                         {/* Uploaded Files */}
@@ -570,13 +582,19 @@ const GeneratePage = () => {
                                         <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                                             <span>Level</span>
                                         </label>
-                                        <input
+                                        <select
                                             type="text"
                                             value={questionLevel}
                                             onChange={(e) => setQuestionLevel(e.target.value)}
-                                            placeholder="SD , SMP, SMA"
+                                            placeholder="Easy"
                                             className="text-xs sm:text-sm w-full px-3 sm:px-4 py-3 sm:py-4 border border-gray-400 rounded-xl focus:ring-2 focus:ring-slate-950/90 focus:border-transparent outline-none transition-all duration-200"
-                                        />
+                                        >
+                                            {questionLevels.map((type) => (
+                                                <option key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -632,7 +650,10 @@ const GeneratePage = () => {
                                             <span className='text-white text-sm sm:text-base'>Generating...</span>
                                         </div>
                                     ) : (
-                                        <span className="text-sm sm:text-base">Buat Soal</span>
+                                        <div className="flex justify-center items-center">
+                                            <span className="mr-2 text-sm sm:text-base">Buat Soal</span>
+                                            <Sparkles className='w-5 h-5' />
+                                        </div>
                                     )}
                                 </button>
                             </div>
@@ -654,7 +675,7 @@ const GeneratePage = () => {
                                         <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                        <span>Hapus Cache</span>
+                                        <span>Hapus Soal</span>
                                     </button>
                                 )}
                             </div>
@@ -778,7 +799,7 @@ const GeneratePage = () => {
                                     </div>
 
                                     {/* Download buttons */}
-                                    <div className="flex lg:flex-col flex-row gap-3 sm:gap-4">
+                                    <div className="flex flex-row gap-3 sm:gap-4">
                                         <div className="flex-1 p-3 sm:p-4 bg-blue-50 rounded-xl border border-soft-blue">
                                             <h4 className="font-medium text-sky-500 mb-2 text-xs sm:text-sm">Unduh Soal</h4>
                                             <button
@@ -810,7 +831,7 @@ const GeneratePage = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
 
     );
 };
