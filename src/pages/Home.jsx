@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle, MessageCircle, FileText, NotebookPen, School, GraduationCap } from 'lucide-react';
+import { BookOpen, MessageCircle, FileText, NotebookPen, School, GraduationCap, ListTodo } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -56,7 +56,7 @@ const HomePage = () => {
         {
             id: 'correction',
             title: 'Koreksi Otomatis',
-            icon: <CheckCircle className="w-8 h-8" />,
+            icon: <ListTodo className="w-8 h-8" />,
             description: 'Gak perlu repot koreksi jawaban murid! Upload kunci jawaban dan jawaban siswa. Hasilnya? Tabel hasil penilaian yang siap diekspor ke Excel.',
             color: 'bg-blue-custom',
             titleColor: 'text-blue-custom',

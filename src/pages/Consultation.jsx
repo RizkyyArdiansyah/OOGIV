@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, X, Upload, Send, Bot, User, Home, ArrowLeft, Copy, Edit } from 'lucide-react';
+import { X, Upload, Send, Bot, User, Home, ArrowLeft, Copy, Edit, Link, Paperclip, Youtube, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ModalKonfirmasi from '../components/confirmModal';
@@ -30,6 +30,7 @@ export default function Consultation() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editedContent, setEditedContent] = useState('');
+  const [isYoutubePopupOpen, setIsYoutubePopupOpen] = useState(false);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -141,6 +142,7 @@ export default function Consultation() {
     if (result.success) {
       setSelectedFiles([]);
       setYoutubeUrl('');
+      setIsYoutubePopupOpen(false);
     }
   };
 
@@ -189,161 +191,61 @@ export default function Consultation() {
     width: isMobile ? '146%' : isTablet ? '284%' : '376%',
   };
 
-  const Sidebar = () => {
-    // Function to handle clearing memory
-    const handleClearMemory = () => {
-      // Menggunakan function dari context
-      clearConsultationData();
-      toast.success('Riwayat berhasil dihapus!');
-    };
+  const handleClearMemory = () => {
+    // Menggunakan function dari context
+    clearConsultationData();
+    toast.success('Riwayat berhasil dihapus!');
+  };
 
-    return (
-      <div className="bg-white p-6 border-r border-gray-200 h-full select-none">
-        <div className="mb-6">
-          <h3 className="text-md font-semibold text-gray-900 mb-4">Sumber Materi</h3>
-
-          <div className="flex gap-x-3 mb-6">
-            <div className="flex flex-row w-full gap-x-2">
-              <div className="rounded-xl border-soft-blue bg-blue-50 border-2 px-3 py-4">
-                <label className="flex items-center space-x-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="materialSource"
-                    value="upload"
-                    checked={materialSource === 'upload'}
-                    onChange={(e) => {
-                      setMaterialSource(e.target.value);
-                    }}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-[0.7rem] text-gray-800">Upload Files</span>
-                </label>
-              </div>
-
-              <div className="rounded-xl border-soft-blue bg-blue-50 border-2 px-3 py-4">
-                <label className="flex items-center space-x-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="materialSource"
-                    value="youtube"
-                    checked={materialSource === 'youtube'}
-                    onChange={(e) => {
-                      const selectedValue = e.target.value;
-                      setMaterialSource(selectedValue);
-                    }}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                  <span className="text-[0.7rem] text-gray-800">Video YouTube</span>
-                </label>
+  const YoutubePopup = () => (
+    <div className="mb-1 flex items-center justify-center">
+      <div
+        className="fixed inset-0"
+        onClick={() => setIsYoutubePopupOpen(false)}
+      />
+      <div className="relative rounded-2xl p-6 w-[60%] mx-auto bg-blue-50 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-red-500 rounded-full">
+              <div className="w-4 h-4 rounded flex items-center justify-center">
+                <Youtube className='text-white' />
               </div>
             </div>
+            <h3 className="text-sm font-semibold text-gray-900">Add YouTube Video</h3>
+          </div>
+          <button
+            onClick={() => setIsYoutubePopupOpen(false)}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="flex w-full gap-x-2 items-center">
+          <div className="">
+            <input
+              type="url"
+              placeholder="Paste YouTube URL here..."
+              value={youtubeUrl}
+              onChange={(e) => setYoutubeUrl(e.target.value)}
+              className="w-[36rem] px-4 py-2 border border-gray-300 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              autoFocus
+            />
           </div>
 
-          {materialSource === 'youtube' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gunakan Video YouTube
-              </label>
-              <input
-                type="url"
-                placeholder="https://youtu.be/xxxxx"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="w-full px-3 py-2 border text-xs border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
-
-          {materialSource === 'upload' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload File Materi
-              </label>
-
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                  }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600 mb-2">Drag and drop files here</p>
-                <p className="text-xs text-gray-500 mb-4">
-                  Limit 5MB per file • PDF, DOCX, PPTX, TXT
-                </p>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
-                >
-                  Browse files
-                </button>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.docx,.pptx,.txt,"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              {selectedFiles.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Selected Files:</p>
-                  <div className="max-h-32 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm text-gray-600 truncate">{file.name}</span>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="text-red-500 hover:text-red-700 ml-2"
-                        >
-                          <X className="w-4 h-4 cursor-pointer" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-x-2 ">
-            <button
-              onClick={handleProcessMaterials}
-              disabled={isProcessing}
-              className="w-full text-sm bg-yellow-custom text-white py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer active:scale-105"
-            >
-              {isProcessing ? 'Memproses...' : 'Proses Materi'}
-            </button>
-
-            {/* Clear Memory Button */}
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-full text-sm bg-red-custom text-white rounded-xl hover:bg-red-500 transition-colors font-medium cursor-pointer active:scale-105"
-            >
-              Hapus Memory
-            </button>
-          </div>
-
-          {/* Modal Konfirmasi */}
-          <ModalKonfirmasi
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onConfirm={handleClearMemory}
-          />
-
+          <button
+            onClick={handleProcessMaterials}
+            disabled={isProcessing || !youtubeUrl.trim()}
+            className="bg-blue-600 text-white px-6 text-sm py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+          >
+            {isProcessing ? 'Processing...' : 'Proses'}
+          </button>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-
       {/* Header */}
       <div className=" px-4 py-2 flex items-center justify-between bg-white shadow-md select-none z-50">
         <button
@@ -352,58 +254,33 @@ export default function Consultation() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex md:mx-auto lg:flex-col w-full justify-between items-center md:space-y-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Upload className="w-5 h-5" />
-          </button>
-          <div className="flex flex-col text-center">
-            <h1 className="text-xl font-bold text-slate-800 lg:mb-2">QnA Materi</h1>
-            <p className="text-sm text-gray-900 hidden sm:block">
-              Bingung dengan materi? <span className="font-medium">Tanya OOGIV</span> mengenai materi yang Anda miliki.
-            </p></div>
+        <div className="flex md:mx-auto flex-row w-full justify-between items-center md:space-y-2">
           <button
             onClick={handleBack}
             className="lg:hidden p-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
           >
             <Home className="w-5 h-5" />
           </button>
+          <div className="flex flex-col text-center mx-auto">
+            <h1 className="text-xl font-bold text-slate-800 lg:mb-2">QnA Materi</h1>
+            <p className="text-sm text-gray-900 hidden sm:block">
+              Bingung dengan materi? <span className="font-medium">Tanya OOGIV</span> mengenai materi yang Anda miliki.
+            </p></div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="p-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Desktop */}
-        <div className="hidden lg:block w-80 bg-white border-r border-gray-200">
-          <Sidebar />
-        </div>
-
-        {/* Sidebar - Mobile Overlay */}
-        {sidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex select-none">
-            <div
-              className="fixed inset-0 bg-transparent backdrop-blur-md bg-opacity-50 transition-opacity "
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="relative bg-white w-80 h-full shadow-xl transform transition-transform duration-600 ease-in-out translate-x-0">
-              <div className="absolute top-4 right-4">
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <Sidebar />
-            </div>
-          </div>
-        )}
-
         {/* Chat Container */}
         <div className="flex-1 flex flex-col select-none">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-12 md:space-y-4 select-none">
+          <div className="flex-1 w-full overflow-y-auto p-6 space-y-12 md:space-y-4 select-none max-w-[55rem] mx-auto">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -517,32 +394,97 @@ export default function Consultation() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Kontainer hanya muncul jika ada file yang dipilih DAN belum diproses */}
+          {selectedFiles.length > 0 && (
+            <div className="relative inset-0 bg-soft-blue/15 rounded-2xl mx-auto w-[68%] px-4 py-2 mb-1">
+              <div className="mt-2 space-y-2">
+                <p className="text-sm font-medium text-gray-700">Selected Files:</p>
+                <div className="flex flex-row items-center">
+                  <div className="max-h-32 w-[30rem] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-xl">
+                        <span className="text-sm text-gray-600 truncate">{file.name}</span>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          <X className="w-4 h-4 cursor-pointer" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tombol proses */}
+                  <button
+                    onClick={handleProcessMaterials}
+                    disabled={isProcessing}
+                    className="flex items-center w-30 h-10 ml-4 text-sm bg-yellow-custom text-white p-3 rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer active:scale-105"
+                  >
+                    {isProcessing ? 'Memproses...' : 'Proses Materi'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Popup Youtube */}
+          {isYoutubePopupOpen && <YoutubePopup />}
+
+          {/* Modal Konfirmasi */}
+          <ModalKonfirmasi
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleClearMemory}
+          />
+
           {/* Input */}
-          <div className="border-t border-gray-200 bg-white p-4">
-            <div className="border-gray-200 bg-white p-1 md:p-4">
+          <div className="border-t border-gray-200 bg-white px-4 py-4">
+            <div className="border-gray-200 bg-white p-2 md:p-4">
               <div className="flex items-end space-x-3">
                 <div className="flex-1 max-w-full">
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Tanya..."
-                    className="w-full max-w-full overflow-hidden px-4 py-3 border rounded-2xl border-soft-blue resize-none focus:outline-none focus:ring-2 focus:ring-soft-blue focus:border-transparent"
-                    rows="1"
-                    style={{ minHeight: '44px', maxHeight: '120px' }}
-                    onInput={(e) => {
-                      e.target.style.height = 'auto';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                    }}
-                  />
+                  <div className="relative w-full max-w-[50rem] mx-auto border-2 border-gray-300 hover:border-soft-blue rounded-2xl shadow-md bg-white p-4">
+                    {/* Textarea */}
+                    <textarea
+                      placeholder="Konsultasi.."
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      rows="1"
+                      className="w-full resize-none border-none focus:ring-0 text-sm focus:outline-none text-gray-700 placeholder-gray-400 pr-16 mb-6"
+                      style={{ minHeight: '30px', maxHeight: '120px' }}
+                      onInput={(e) => {
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                      }}
+                    />
+
+                    {/* Action Buttons - Bottom Left */}
+                    <div className="absolute bottom-4 left-3 flex items-center gap-2 text-gray-500">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Upload File" className="hover:text-blue-custom transition hover:bg-soft-blue/30 p-1 rounded-md cursor-pointer">
+                        <Paperclip className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsYoutubePopupOpen(true);
+                          setMaterialSource('youtube');
+                        }}
+                        title="YouTube URL" className="hover:text-blue-custom transition hover:bg-soft-blue/30 p-1 rounded-md cursor-pointer">
+                        <Link className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Send Button - Bottom Right */}
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={!inputValue.trim() || isProcessing}
+                      className="absolute bottom-1 right-4 p-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2"
+                    >
+                      <Send className="w-4 h-4 md:w-5 md:h-5 rotate-45 mr-1" />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isProcessing}
-                  className="p-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2"
-                >
-                  <Send className="w-5 h-5 rotate-45 mr-1" />
-                </button>
               </div>
             </div>
           </div>

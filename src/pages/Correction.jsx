@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, File, ArrowLeft, CheckCircle, AlertCircle, Trophy, BookOpen, Download, FileKey, UsersRound } from 'lucide-react';
+import { Upload, X, File, ArrowLeft, CheckCircle, AlertCircle, Trophy, BookOpen, Download, FileKey, UsersRound, Key, Users, BarChart3 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCorrectionContext } from '../contexts/CorrectionContext';
 
@@ -13,14 +13,64 @@ const CorrectionPage = () => {
     const studentFileInputRef = useRef(null);
     const navigate = useNavigate();
 
-    const { isCorrecting, correctionResult, error, submitCorrection, resetCorrection, correctionStats, } = useCorrectionContext();
-    // Untuk data individual siswa
-    correctionStats?.students.map(siswa => ({
-        nama: siswa.nama,
-        jumlah_benar: siswa.jumlah_benar,
-        jumlah_salah: siswa.jumlah_salah,
-        nilai: siswa.nilai
-    }))
+    const { isCorrecting, correctionResult, error, submitCorrection, resetCorrection, correctionStats, currentStep, setCurrentStep, correctionComplete, setResetFilesCallback } = useCorrectionContext();
+
+    // Function to reset all file inputs
+    const resetFileInputs = () => {
+        setCurrentStep(0);
+        setKeyFiles([]);
+        setStudentFiles([]);
+        setKeyDragActive(false);
+        setStudentDragActive(false);
+
+        // Clear file input values
+        if (keyFileInputRef.current) {
+            keyFileInputRef.current.value = '';
+        }
+        if (studentFileInputRef.current) {
+            studentFileInputRef.current.value = '';
+        }
+    };
+
+    // Register the reset callback with the context
+    useEffect(() => {
+        setResetFilesCallback(() => resetFileInputs);
+
+        // Cleanup function to remove the callback when component unmounts
+        return () => {
+            setResetFilesCallback(null);
+        };
+    }, [setResetFilesCallback]);
+
+    // Progress steps definition
+    const progressSteps = [
+        {
+            id: 0,
+            title: 'Upload Kunci Jawaban',
+            icon: FileKey
+        },
+        {
+            id: 1,
+            title: 'Upload Jawaban Siswa',
+            icon: UsersRound
+        },
+        {
+            id: 2,
+            title: 'Lihat Hasil Penilaian Siswa',
+            icon: BarChart3
+        }
+    ];
+
+    // Calculate progress percentage
+    const progressPercentage = currentStep === 0 ? 0 : currentStep === 1 ? 50 :
+
+        // Untuk data individual siswa
+        correctionStats?.students.map(siswa => ({
+            nama: siswa.nama,
+            jumlah_benar: siswa.jumlah_benar,
+            jumlah_salah: siswa.jumlah_salah,
+            nilai: siswa.nilai
+        }))
 
     // Untuk statistik keseluruhan
     const totalSiswa = correctionStats?.totalSiswa;
@@ -79,6 +129,9 @@ const CorrectionPage = () => {
         if (!files || files.length === 0) return;
 
         const fileArray = Array.from(files);
+        setKeyFiles(prev => [...prev, ...fileArray]);
+
+        setCurrentStep(1);
 
         // Tampilkan warning kalau user upload lebih dari 1 file
         if (fileArray.length > 1) {
@@ -99,6 +152,7 @@ const CorrectionPage = () => {
 
         // Ganti file sebelumnya dengan file yang valid
         setKeyFiles([file]);
+
     };
 
     const handleStudentFiles = (files) => {
@@ -132,7 +186,7 @@ const CorrectionPage = () => {
         }
 
         if (rejected) {
-            alert(`File "${rejected}" ditolak karena upload size melebihi batas total 5MB.`);
+            toast.error(`File "${rejected}" ditolak karena upload size melebihi batas total 5MB.`);
         }
     };
 
@@ -320,165 +374,267 @@ const CorrectionPage = () => {
             <div className="w-full max-w-full mx-auto px-4 lg:px-6 xl:px-8 py-4 select-none">
                 <div className="flex flex-col md:flex-row gap-4 lg:gap-6 xl:gap-8">
                     {/* Form Section - Responsive width */}
-                    <div className="w-full md:w-2/5 2xl:w-1/3">
+                    <div className="w-full md:w-[50%] 2xl:w-1/3">
                         <div className="rounded-2xl bg-white shadow-lg p-5 sm:p-4 lg:p-6 border-t-sky-300 border-t-6">
                             <div className="space-y-4 sm:space-y-5">
-                                <div className="flex flex-col gap-y-3">
-                                    {/* Upload Kunci Jawaban*/}
-                                    <div className="flex gap-2 text-center items-center">
-                                        <FileKey className='w-5 h-5' />
-                                        <label className='text-md font-medium text-gray-700'>Upload Kunci Jawaban</label>
-                                    </div>
-                                    <div
-                                        className={`relative border-2 border-dashed rounded-lg p-3 transition-all duration-200 ${keyDragActive
-                                            ? 'border-blue-400 bg-blue-50'
-                                            : 'border-gray-300 hover:border-gray-400'
-                                            }`}
-                                        onDragEnter={handleKeyDrag}
-                                        onDragLeave={handleKeyDrag}
-                                        onDragOver={handleKeyDrag}
-                                        onDrop={handleKeyDrop}
-                                    >
-                                        <div className="text-center">
-                                            <Upload className="mx-auto h-5 w-5 text-gray-400 mb-2" />
-                                            <p className="text-xs font-medium text-gray-700 mb-1">
-                                                Drag and drop files here
-                                            </p>
-                                            <p className="text-xs text-gray-500 mb-2">
-                                                Limit 5MB • PDF, DOCX, PPTX, TXT
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => keyFileInputRef.current?.click()}
-                                                className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-md transition-colors duration-200 cursor-pointer"
-                                            >
-                                                Browse files
-                                            </button>
-                                        </div>
-                                        <input
-                                            ref={keyFileInputRef}
-                                            type="file"
-                                            multiple
-                                            accept=".pdf,.docx,.pptx,.txt"
-                                            onChange={(e) => handleKeyFiles(e.target.files)}
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    {/* Uploaded Key Files */}
-                                    {keyFiles.length > 0 && (
-                                        <div className="mt-2 space-y-2">
-                                            <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
-                                                {keyFiles.map((file, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                                                        <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                                            <File className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                                                            <span className="text-xs font-medium text-gray-700 truncate">
-                                                                {file.name}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500 flex-shrink-0">
-                                                                ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => removeKeyFile(index)}
-                                                            className="text-red-500 hover:text-red-700 transition-colors duration-200 cursor-pointer flex-shrink-0 ml-2"
-                                                        >
-                                                            <X className="w-3 h-3" />
-                                                        </button>
+                                {/* Progress Bar */}
+                                <div className="mb-2 rounded-2xl py-4 px-2">
+                                    <div className="relative flex items-center justify-between mb-2 gap-12">
+                                        {/* Progress Line Background */}
+                                        <div className="absolute top-6 left-6 right-6 h-1 bg-gray-200 rounded-full -translate-y-1/2 z-0"></div>
+
+                                        {/* Progress Line Active */}
+                                        <div
+                                            className="absolute top-6 left-6 h-1 bg-emerald-500 rounded-full -translate-y-1/2 transition-all duration-500 ease-out z-0"
+                                            style={{
+                                                width: correctionComplete
+                                                    ? `calc(100% - 3rem)`
+                                                    : `calc(${progressPercentage}% - 3rem)`
+                                            }}
+                                        ></div>
+
+                                        {progressSteps.map((step, index) => {
+                                            const StepIcon = step.icon;
+                                            const isActive = index <= currentStep;
+                                            const isCompleted = index < currentStep;
+                                            // Only show final step as active if correction is complete
+                                            const isFinalStepActive = index === 2 && correctionComplete;
+
+                                            return (
+                                                <div key={step.id} className="flex flex-col items-center flex-1 relative z-10">
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 ${isFinalStepActive || (isActive && index !== 2)
+                                                        ? 'bg-gradient-to-r from-teal-500 via-cyan-400 to-green-500 text-white shadow-lg'
+                                                        : 'bg-gray-200 text-gray-400'
+                                                        }`}>
+                                                        <StepIcon className="w-6 h-6" />
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                                    <h3 className={`text-xs font-semibold text-center ${isFinalStepActive || (isActive && index !== 2) ? 'text-gray-800' : 'text-gray-400'
+                                                        }`}>
+                                                        {step.title}
+                                                    </h3>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col gap-y-3">
-                                    {/* Upload Jawaban siswa*/}
-                                    <div className="flex gap-2 text-center items-center">
-                                        <UsersRound className='w-5 h-5'/>
-                                        <label className='text-md font-medium text-gray-700'>Upload Jawaban Siswa</label>
-                                    </div>
-                                    <div
-                                        className={`relative border-2 border-dashed rounded-lg p-3 transition-all duration-200 ${studentDragActive
-                                            ? 'border-blue-400 bg-blue-50'
-                                            : 'border-gray-300 hover:border-gray-400'
-                                            }`}
-                                        onDragEnter={handleStudentDrag}
-                                        onDragLeave={handleStudentDrag}
-                                        onDragOver={handleStudentDrag}
-                                        onDrop={handleStudentDrop}
-                                    >
-                                        <div className="text-center">
-                                            <Upload className="mx-auto h-5 w-5 text-gray-400 mb-2" />
-                                            <p className="text-xs font-medium text-gray-700 mb-1">
-                                                Drag and drop files here
-                                            </p>
-                                            <p className="text-xs text-gray-500 mb-2">
-                                                Limit 5MB • PDF, DOCX, PPTX, TXT
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => studentFileInputRef.current?.click()}
-                                                className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-md transition-colors duration-200 cursor-pointer"
-                                            >
-                                                Browse files
-                                            </button>
+                                {/* Step 0: Upload Kunci Jawaban */}
+                                {currentStep === 0 && (
+                                    <div className="flex flex-col gap-y-3">
+                                        <div className="flex gap-2 text-center items-center">
+                                            <FileKey className='w-5 h-5' />
+                                            <label className='text-md font-medium text-gray-700'>Upload Kunci Jawaban</label>
                                         </div>
-                                        <input
-                                            ref={studentFileInputRef}
-                                            type="file"
-                                            multiple
-                                            accept=".pdf,.docx,.pptx,.txt"
-                                            onChange={(e) => handleStudentFiles(e.target.files)}
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    {/* Uploaded Student Files */}
-                                    {studentFiles.length > 0 && (
-                                        <div className="mt-2 space-y-2">
-                                            <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                                {studentFiles.map((file, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                                                        <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                                            <File className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                                                            <span className="text-xs font-medium text-gray-700 truncate">
-                                                                {file.name}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500 flex-shrink-0">
-                                                                ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => removeStudentFile(index)}
-                                                            className="text-red-500 hover:text-red-700 transition-colors duration-200 cursor-pointer flex-shrink-0 ml-2"
-                                                        >
-                                                            <X className="w-3 h-3" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                        <div
+                                            className={`relative border-2 border-dashed rounded-xl p-4 transition-all duration-200 ${keyDragActive
+                                                ? 'border-blue-400 bg-blue-50'
+                                                : 'border-gray-300 hover:border-gray-400'
+                                                }`}
+                                            onDragEnter={handleKeyDrag}
+                                            onDragLeave={handleKeyDrag}
+                                            onDragOver={handleKeyDrag}
+                                            onDrop={handleKeyDrop}
+                                        >
+                                            <div className="text-center">
+                                                {/* Blue circular upload icon */}
+                                                <div className="mx-auto w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mb-3">
+                                                    <Upload className="h-5 w-5 text-white" />
+                                                </div>
 
-                                    {/* Generate Button - Fixed */}
-                                    <button
-                                        onClick={onCorrecting}
-                                        disabled={isCorrecting || keyFiles.length === 0 || studentFiles.length === 0}
-                                        className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold transition-all duration-400 ${isCorrecting || keyFiles.length === 0 || studentFiles.length === 0
-                                            ? 'bg-gray-400 text-white cursor-not-allowed'
-                                            : 'bg-slate-100 outline-2 outline-sky-300 hover:bg-sky-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-slate-950/70 hover:text-white cursor-pointer'
-                                            }`}
-                                    >
-                                        {isCorrecting ? (
-                                            <div className="flex items-center justify-center space-x-3">
-                                                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
-                                                <span className='text-white text-sm sm:text-base'>Sedang Mengoreksi...</span>
+                                                {/* Main heading */}
+                                                <h3 className="text-md font-semibold text-gray-900 mb-3">
+                                                    Pilih Dokumen
+                                                </h3>
+
+                                                {/* Description text */}
+                                                <p className="text-sm text-gray-500 mb-3">
+                                                    Drag and drop here • limit 5MB per upload
+                                                </p>
+
+                                                {/* File type badges */}
+                                                <div className="flex justify-center gap-3 mb-3">
+                                                    <span className="px-3 py-1.5 bg-blue-100 text-blue-600 text-xs font-medium rounded-lg">
+                                                        PDF
+                                                    </span>
+                                                    <span className="px-3 py-1.5 bg-green-100 text-green-600 text-xs font-medium rounded-lg">
+                                                        DOC
+                                                    </span>
+                                                    <span className="px-3 py-1.5 bg-purple-100 text-purple-600 text-xs font-medium rounded-lg">
+                                                        TXT
+                                                    </span>
+                                                </div>
+
+                                                {/* Browse button (hidden but accessible for click) */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => keyFileInputRef.current?.click()}
+                                                    className="w-full h-full absolute inset-0 opacity-0 cursor-pointer"
+                                                    aria-label="Browse files"
+                                                />
                                             </div>
-                                        ) : (
-                                            <span className="text-sm sm:text-base">Koreksi Jawaban</span>
+
+                                            <input
+                                                ref={keyFileInputRef}
+                                                type="file"
+                                                multiple
+                                                accept=".pdf,.docx,.txt"
+                                                onChange={(e) => handleKeyFiles(e.target.files)}
+                                                className="hidden"
+                                            />
+                                        </div>
+
+                                        {/* Uploaded Key Files */}
+                                        {keyFiles.length > 0 && (
+                                            <div className="mt-2 space-y-2">
+                                                <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
+                                                    {keyFiles.map((file, index) => (
+                                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                                                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                                                <File className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                                                <span className="text-xs font-medium text-gray-700 truncate">
+                                                                    {file.name}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                                                    ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => removeKeyFile(index)}
+                                                                className="text-red-500 hover:text-red-700 transition-colors duration-200 cursor-pointer flex-shrink-0 ml-2"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         )}
-                                    </button>
-                                </div>
+                                    </div>
+                                )}
+
+                                {/* Step 1: Upload Jawaban Siswa */}
+                                {currentStep === 1 && (
+                                    <div className="flex flex-col gap-y-3">
+                                        <div className="flex gap-2 text-center items-center">
+                                            <UsersRound className='w-5 h-5' />
+                                            <label className='text-md font-medium text-gray-700'>Upload Jawaban Siswa</label>
+                                        </div>
+                                        <div
+                                            className={`relative border-2 border-dashed rounded-xl p-4 transition-all duration-200 ${studentDragActive
+                                                ? 'border-blue-400 bg-blue-50'
+                                                : 'border-gray-300 hover:border-gray-400'
+                                                }`}
+                                            onDragEnter={handleStudentDrag}
+                                            onDragLeave={handleStudentDrag}
+                                            onDragOver={handleStudentDrag}
+                                            onDrop={handleStudentDrop}
+                                        >
+                                            <div className="text-center">
+                                                {/* Blue circular upload icon */}
+                                                <div className="mx-auto w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mb-3">
+                                                    <Upload className="h-5 w-5 text-white" />
+                                                </div>
+
+                                                {/* Main heading */}
+                                                <h3 className="text-md font-semibold text-gray-900 mb-3">
+                                                    Pilih Dokumen
+                                                </h3>
+
+                                                {/* Description text */}
+                                                <p className="text-sm text-gray-500 mb-3">
+                                                    Drag and drop here • limit 5MB per upload
+                                                </p>
+
+                                                {/* File type badges */}
+                                                <div className="flex justify-center gap-3 mb-3">
+                                                    <span className="px-3 py-1.5 bg-blue-100 text-blue-600 text-xs font-medium rounded-lg">
+                                                        PDF
+                                                    </span>
+                                                    <span className="px-3 py-1.5 bg-green-100 text-green-600 text-xs font-medium rounded-lg">
+                                                        DOC
+                                                    </span>
+                                                    <span className="px-3 py-1.5 bg-purple-100 text-purple-600 text-xs font-medium rounded-lg">
+                                                        TXT
+                                                    </span>
+                                                </div>
+
+                                                {/* Browse button (hidden but accessible for click) */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => studentFileInputRef.current?.click()}
+                                                    className="w-full h-full absolute inset-0 opacity-0 cursor-pointer"
+                                                    aria-label="Browse files"
+                                                />
+                                            </div>
+
+                                            <input
+                                                ref={studentFileInputRef}
+                                                type="file"
+                                                multiple
+                                                accept=".pdf,.docx,.txt"
+                                                onChange={(e) => handleStudentFiles(e.target.files)}
+                                                className="hidden"
+                                            />
+                                        </div>
+
+                                        {/* Uploaded Student Files */}
+                                        {studentFiles.length > 0 && (
+                                            <div className="mt-1 space-y-2">
+                                                <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                                    {studentFiles.map((file, index) => (
+                                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                                                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                                                <File className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                                                <span className="text-xs font-medium text-gray-700 truncate">
+                                                                    {file.name}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                                                    ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => removeStudentFile(index)}
+                                                                className="text-red-500 hover:text-red-700 transition-colors duration-200 cursor-pointer flex-shrink-0 ml-2"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-3 mt-2">
+                                            {/* Back Button */}
+                                            <button
+                                                onClick={resetCorrection}
+                                                className="flex-1 px-2 py-2 md:py-3 md:px-4 rounded-xl font-semibold transition-all duration-400 bg-gray-100 hover:bg-red-custom text-gray-700 hover:text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02] outline-2 outline-red-custom cursor-pointer"
+                                            >
+                                                <span className="text-sm sm:text-base">Kembali</span>
+                                            </button>
+
+                                            {/* Generate Button */}
+                                            <button
+                                                onClick={onCorrecting}
+                                                disabled={isCorrecting || studentFiles.length === 0}
+                                                className={`flex-1 px-2 py-2 md:py-3 md:px-4 rounded-xl font-semibold transition-all duration-400 ${isCorrecting || studentFiles.length === 0
+                                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                                    : 'bg-slate-100 outline-2 outline-sky-300 hover:bg-sky-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-slate-950/70 hover:text-white cursor-pointer'
+                                                    }`}
+                                            >
+                                                {isCorrecting ? (
+                                                    <div className="flex items-center justify-center space-x-3">
+                                                        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                                                        <span className='text-white text-sm sm:text-base'>Sedang Mengoreksi...</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm sm:text-base">Koreksi Jawaban</span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -567,15 +723,25 @@ const CorrectionPage = () => {
                                         </div>
                                     </div>
 
-                                    {/* Download Button */}
-                                    <div className="flex justify-end flex-shrink-0">
-                                        <button
-                                            onClick={downloadExcel}
-                                            className="flex items-center text-sm gap-2 bg-none border-2 border-emerald-500 hover:bg-emerald-500 hover:text-white px-4 py-2 rounded-lg transition-colors duration-200 active:scale-105 cursor-pointer"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Download (Excel)
-                                        </button>
+                                    <div className="flex justify-end gap-x-2">
+                                        {/* Download Button */}
+                                        <div className="flex justify-end flex-shrink-0">
+                                            <button
+                                                onClick={downloadExcel}
+                                                className="flex items-center text-xs md:text-sm gap-2 bg-gradient-to-tr from-cyan-400 via-sky-400 to-blue-500 hover:shadow-md shadow-soft-blue/30 text-white px-4 py-2 rounded-lg transition-colors duration-200 active:scale-105 cursor-pointer"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Download (Excel)
+                                            </button>
+                                        </div>
+                                        <div className="flex justify-end flex-shrink-0">
+                                            <button
+                                                onClick={resetCorrection}
+                                                className="flex items-center text-xs md:text-sm gap-2 hover:shadow-md shadow-soft-blue/30 border-2 border-gray-400 text-black px-4 py-2 rounded-lg transition-colors duration-200 active:scale-105 cursor-pointer"
+                                            >
+                                                Penilaian Baru
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Results Table - Scrollable */}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -19,6 +19,13 @@ export const CorrectionProvider = ({ children }) => {
     const [correctionStats, setCorrectionStats] = useState(null);
     const [error, setError] = useState(null);
 
+    // Step management states
+    const [currentStep, setCurrentStep] = useState(0);
+    const [correctionComplete, setCorrectionComplete] = useState(false);
+
+    // File reset callback - will be set by the component
+    const [resetFilesCallback, setResetFilesCallback] = useState(null);
+
     // Function to calculate statistics from the correction results
     const calculateStats = (hasilNilai) => {
         if (!hasilNilai || !Array.isArray(hasilNilai) || hasilNilai.length === 0) {
@@ -34,7 +41,7 @@ export const CorrectionProvider = ({ children }) => {
         const studentsWithWrongCount = hasilNilai.map(siswa => {
             const totalSoal = Object.keys(siswa.koreksi).length;
             const jumlahSalah = totalSoal - siswa.jumlah_benar;
-            
+
             return {
                 nama: siswa.nama,
                 jumlah_benar: siswa.jumlah_benar,
@@ -94,16 +101,20 @@ export const CorrectionProvider = ({ children }) => {
             // Handle response structure based on the API format
             if (response.data && response.data.oogiv_response) {
                 const oogiv_response = response.data.oogiv_response;
-                
+
                 // Check if hasil_nilai exists and is an array
                 if (oogiv_response.hasil_nilai && Array.isArray(oogiv_response.hasil_nilai)) {
                     // Set the main correction result
                     setCorrectionResult(oogiv_response);
-                    
+
                     // Calculate and set statistics
                     const stats = calculateStats(oogiv_response.hasil_nilai);
                     setCorrectionStats(stats);
-                    
+
+                    // Mark correction as complete and move to final step
+                    setCorrectionComplete(true);
+                    setCurrentStep(2);
+
                     toast.success('Koreksi berhasil diselesaikan!');
                 } else {
                     throw new Error('Format hasil_nilai tidak valid atau tidak ditemukan');
@@ -151,6 +162,28 @@ export const CorrectionProvider = ({ children }) => {
         setCorrectionStats(null);
         setError(null);
         setIsCorrecting(false);
+        // Reset step states
+        setCurrentStep(0);
+        setCorrectionComplete(false);
+        
+        // Reset file inputs if callback is available
+        if (resetFilesCallback && typeof resetFilesCallback === 'function') {
+            resetFilesCallback();
+        }
+    };
+
+    // Helper function to go to next step
+    const nextStep = () => {
+        if (currentStep < 2) {
+            setCurrentStep(currentStep + 1);
+        }
+    };
+
+    // Helper function to go to previous step
+    const prevStep = () => {
+        if (currentStep > 0) {
+            setCurrentStep(currentStep - 1);
+        }
     };
 
     const value = {
@@ -159,7 +192,16 @@ export const CorrectionProvider = ({ children }) => {
         correctionStats,
         error,
         submitCorrection,
-        resetCorrection
+        resetCorrection,
+        // Step management
+        currentStep,
+        setCurrentStep,
+        correctionComplete,
+        setCorrectionComplete,
+        nextStep,
+        prevStep,
+        // File reset callback management
+        setResetFilesCallback,
     };
 
     return (

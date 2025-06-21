@@ -48,6 +48,8 @@ export const GenerateProvider = ({ children }) => {
                 const mp3File = new File([mp3Blob], `youtube_audio_${Date.now()}.mp3`, {
                     type: 'audio/mpeg'
                 });
+                const fileSizeMB = (mp3File.size / (1024 * 1024)).toFixed(2);
+                console.log(`Ukuran file MP3: ${fileSizeMB} MB`);
 
                 toast.success('URL berhasil diproses');
                 return mp3File;
@@ -191,13 +193,12 @@ export const GenerateProvider = ({ children }) => {
                 });
             }
 
-            // Send request to API with converted MP3 or uploaded files
-            toast.info('Mengirim data ke server...');
             const response = await axios.post(`${API_BASE_URL}/buatsoal`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     accept: 'application/json',
                 },
+                withCredentials: true,
                 timeout: 120000,
             });
 

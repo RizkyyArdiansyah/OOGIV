@@ -44,8 +44,8 @@ const GeneratePage = () => {
 
         if (success) {
             setSubject('');
-            setQuestionType('');
-            setQuestionLevel('');
+            setQuestionType('pg');
+            setQuestionLevel('easy');
             setYoutubeUrl('');
             setUploadedFiles([]);
             setMaterialType('file');
@@ -801,26 +801,26 @@ const GeneratePage = () => {
                                     {/* Download buttons */}
                                     <div className="flex flex-row gap-3 sm:gap-4">
                                         <div className="flex-1 p-3 sm:p-4 bg-blue-50 rounded-xl border border-soft-blue">
-                                            <h4 className="font-medium text-sky-500 mb-2 text-xs sm:text-sm">Unduh Soal</h4>
+                                            <h4 className="font-medium text-sky-500 mb-2 text-xs">Unduh Soal</h4>
                                             <button
                                                 onClick={() => handleDownloadPDF('questions')}
                                                 disabled={isDownloading}
                                                 className="w-full flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-sky-500 hover:bg-sky-700 text-white rounded-lg transition-colors duration-200 cursor-pointer"
                                             >
                                                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                <span className="text-xs sm:text-sm">{isDownloading ? 'Mengunduh...' : 'Soal (PDF)'}</span>
+                                                <span className="text-xs">{isDownloading ? 'Mengunduh...' : 'Soal (PDF)'}</span>
                                             </button>
                                         </div>
 
                                         <div className="flex-1 p-3 sm:p-4 bg-green-50 rounded-xl border border-emerald-500">
-                                            <h4 className="font-medium text-emerald-500 mb-2 text-xs sm:text-sm">Unduh Jawaban</h4>
+                                            <h4 className="font-medium text-emerald-500 mb-2 text-xs">Unduh Jawaban</h4>
                                             <button
                                                 onClick={() => handleDownloadPDF('answers')}
                                                 disabled={isDownloading}
                                                 className="w-full flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-emerald-500 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-200 cursor-pointer"
                                             >
                                                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                <span className="text-xs sm:text-sm">{isDownloading ? 'Mengunduh...' : 'Jawaban (PDF)'}</span>
+                                                <span className="text-xs">{isDownloading ? 'Mengunduh...' : 'Jawaban (PDF)'}</span>
                                             </button>
                                         </div>
                                     </div>
