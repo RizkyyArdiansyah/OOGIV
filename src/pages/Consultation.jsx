@@ -98,6 +98,11 @@ export default function Consultation() {
 
     if (acceptedFiles.length > 0) {
       setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+      // Set material source to upload when files are selected
+      setMaterialSource('upload');
+      // Close YouTube popup if open
+      setIsYoutubePopupOpen(false);
+      setYoutubeUrl('');
     }
 
     if (rejectedFiles.length > 0) {
@@ -121,6 +126,10 @@ export default function Consultation() {
 
   const removeFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    // If no files left, reset material source
+    if (selectedFiles.length === 1) {
+      setMaterialSource('');
+    }
   };
 
   const handleProcessMaterials = async () => {
@@ -143,6 +152,7 @@ export default function Consultation() {
       setSelectedFiles([]);
       setYoutubeUrl('');
       setIsYoutubePopupOpen(false);
+      setMaterialSource('');
     }
   };
 
@@ -184,6 +194,26 @@ export default function Consultation() {
     await sendMessage(newContent.trim());
   };
 
+  // Handle file input click
+  const handleFileInputClick = () => {
+    // Close YouTube popup if open
+    if (isYoutubePopupOpen) {
+      setIsYoutubePopupOpen(false);
+      setYoutubeUrl('');
+    }
+    // Open file dialog
+    fileInputRef.current?.click();
+  };
+
+  // Handle YouTube popup open
+  const handleYoutubePopupOpen = () => {
+    // Clear selected files if any
+    if (selectedFiles.length > 0) {
+      setSelectedFiles([]);
+    }
+    setMaterialSource('youtube');
+    setIsYoutubePopupOpen(true);
+  };
 
   const isMobile = window.innerWidth < 768;
   const isTablet = window.innerWidth < 1024;
@@ -199,11 +229,7 @@ export default function Consultation() {
 
   const YoutubePopup = () => (
     <div className="mb-1 flex items-center justify-center">
-      <div
-        className="fixed inset-0"
-        onClick={() => setIsYoutubePopupOpen(false)}
-      />
-      <div className="relative rounded-2xl p-6 w-[60%] mx-auto bg-blue-50 shadow-xl">
+      <div className="rounded-2xl p-6 w-auto lg:w-[60%] mx-auto bg-blue-50 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="p-2 bg-red-500 rounded-full">
@@ -211,10 +237,14 @@ export default function Consultation() {
                 <Youtube className='text-white' />
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-gray-900">Add YouTube Video</h3>
+            <h3 className="text-sm font-semibold text-gray-700">Add YouTube Video</h3>
           </div>
           <button
-            onClick={() => setIsYoutubePopupOpen(false)}
+            onClick={() => {
+              setIsYoutubePopupOpen(false);
+              setYoutubeUrl('');
+              setMaterialSource('');
+            }}
             className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-5 h-5 text-gray-500" />
@@ -227,7 +257,7 @@ export default function Consultation() {
               placeholder="Paste YouTube URL here..."
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              className="w-[36rem] px-4 py-2 border border-gray-300 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-auto md:w-[36rem] px-4 py-2 border border-gray-300 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               autoFocus
             />
           </div>
@@ -235,9 +265,9 @@ export default function Consultation() {
           <button
             onClick={handleProcessMaterials}
             disabled={isProcessing || !youtubeUrl.trim()}
-            className="bg-blue-600 text-white px-6 text-sm py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+            className="bg-gradient-to-l from-sky-500 via-sky-600 to-cyan-500 text-white px-4 text-sm py-2 rounded-xl hover:outline-2 outline-blue-custom disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
           >
-            {isProcessing ? 'Processing...' : 'Proses'}
+            {isProcessing ? 'Processing..' : 'Proses'}
           </button>
         </div>
       </div>
@@ -394,13 +424,13 @@ export default function Consultation() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Kontainer hanya muncul jika ada file yang dipilih DAN belum diproses */}
-          {selectedFiles.length > 0 && (
-            <div className="relative inset-0 bg-soft-blue/15 rounded-2xl mx-auto w-[68%] px-4 py-2 mb-1">
-              <div className="mt-2 space-y-2">
+          {/* Kontainer hanya muncul jika ada file yang dipilih DAN belum diproses DAN popup youtube tidak terbuka */}
+          {selectedFiles.length > 0 && !isYoutubePopupOpen && (
+            <div className="bg-soft-blue/15 rounded-2xl mx-auto w-auto lg:w-[51%] px-4 py-2 mb-1">
+              <div className="mt-2 mb-1 space-y-2">
                 <p className="text-sm font-medium text-gray-700">Selected Files:</p>
                 <div className="flex flex-row items-center">
-                  <div className="max-h-32 w-[30rem] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  <div className="max-h-32 w-[10rem]  lg:w-[30rem] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                     {selectedFiles.map((file, index) => (
                       <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-xl">
                         <span className="text-sm text-gray-600 truncate">{file.name}</span>
@@ -418,7 +448,7 @@ export default function Consultation() {
                   <button
                     onClick={handleProcessMaterials}
                     disabled={isProcessing}
-                    className="flex items-center w-30 h-10 ml-4 text-sm bg-yellow-custom text-white p-3 rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer active:scale-105"
+                    className="flex items-center w-30 h-10 ml-4 text-sm bg-gradient-to-l from-yellow-300 via-amber-500 to-orange-400 text-white p-3 rounded-xl hover:outline-2 hover:outline-yellow-custom disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer active:scale-105"
                   >
                     {isProcessing ? 'Memproses...' : 'Proses Materi'}
                   </button>
@@ -427,14 +457,24 @@ export default function Consultation() {
             </div>
           )}
 
-          {/* Popup Youtube */}
-          {isYoutubePopupOpen && <YoutubePopup />}
+          {/* Popup Youtube - hanya muncul jika tidak ada selected files */}
+          {isYoutubePopupOpen && selectedFiles.length === 0 && <YoutubePopup />}
 
           {/* Modal Konfirmasi */}
           <ModalKonfirmasi
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onConfirm={handleClearMemory}
+          />
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx,.pptx,.txt"
+            onChange={handleFileSelect}
+            className="hidden"
           />
 
           {/* Input */}
@@ -461,15 +501,12 @@ export default function Consultation() {
                     {/* Action Buttons - Bottom Left */}
                     <div className="absolute bottom-4 left-3 flex items-center gap-2 text-gray-500">
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={handleFileInputClick}
                         title="Upload File" className="hover:text-blue-custom transition hover:bg-soft-blue/30 p-1 rounded-md cursor-pointer">
                         <Paperclip className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => {
-                          setIsYoutubePopupOpen(true);
-                          setMaterialSource('youtube');
-                        }}
+                        onClick={handleYoutubePopupOpen}
                         title="YouTube URL" className="hover:text-blue-custom transition hover:bg-soft-blue/30 p-1 rounded-md cursor-pointer">
                         <Link className="w-5 h-5" />
                       </button>
